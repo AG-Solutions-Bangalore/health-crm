@@ -19,7 +19,8 @@ import {
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
-
+import ExcelJS from "exceljs";
+import { RiFileExcel2Line } from "react-icons/ri";
 const readingTypeMappings = {
   Pressure: ["BPSITL"],
   Glucose: ["GLF", "GL", "GLR", "GLFMM", "GLRMM", "GLMM"],
@@ -153,7 +154,84 @@ const PatientSummary = () => {
       };
     });
   }, [patientList, allReadings]);
+  const downloadExcel = async () => {
+    if (!patientSummaryData || patientSummaryData.length === 0) {
+      console.warn("No data available to export");
+      return;
+    }
+  
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Patient Summary");
+  
+ 
 
+    const headers = ["Sl No", "Patient Name", "Pressure", "Glucose", "Heartrate", "Time"];
+  
+    // Add headers to worksheet
+    const headerRow = worksheet.addRow(headers);
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true ,color: { argb: "FFFFFFFF" } };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "6A9AD0" },
+      };
+    
+      cell.alignment = { horizontal: "center" };
+    });
+  
+    // Add data rows
+    patientSummaryData.forEach(({ patient, latestReadings }, index) => {
+      const row = worksheet.addRow([
+        index + 1,
+        `${patient.firstName} ${patient.lastName}`,
+        latestReadings.Pressure ? formatReadingValue(latestReadings.Pressure) : "-",
+        latestReadings.Glucose ? formatReadingValue(latestReadings.Glucose) : "-",
+        latestReadings.Heartrate ? formatReadingValue(latestReadings.Heartrate) : "-",
+        latestReadings.Pressure 
+          ? moment(latestReadings.Pressure.readingTimeUTC).format("h:mm A") 
+          : ""
+      ]);
+  
+     
+      row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        if (colNumber === 1) { // Sl No
+          cell.alignment = { horizontal: 'center' };
+        } else if (colNumber === 2) { // Patient Name
+          cell.alignment = { horizontal: 'left' };
+        } else if (colNumber >= 3 && colNumber <= 5) { // Pressure, Glucose, Heartrate
+          cell.alignment = { horizontal: 'center' };
+        } else if (colNumber === 6) { // Time
+          cell.alignment = { horizontal: 'right' ,};
+          cell.font = { size: 9 };
+        }
+      });
+    });
+  
+    // Auto-fit columns
+    worksheet.columns.forEach(column => {
+      let maxLength = 0;
+      column.eachCell({ includeEmpty: true }, cell => {
+        const columnLength = cell.value ? cell.value.toString().length : 0;
+        if (columnLength > maxLength) {
+          maxLength = columnLength;
+        }
+      });
+      column.width = maxLength < 10 ? 10 : maxLength + 2;
+    });
+  
+    // Generate and download Excel file
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `patient_report_${moment().format("DD-MMM-YYYY")}.xlsx`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
   const handlPrintPdf = useReactToPrint({
     content: () => containerRef.current,
     documentTitle: "patient-summary",
@@ -211,7 +289,7 @@ const PatientSummary = () => {
       </Layout>
     );
   }
-
+  // #6A9AD0
   if (isError) {
     return (
       <Layout>
@@ -281,6 +359,10 @@ const PatientSummary = () => {
               </DropdownMenu>
               <Button className="print-hide" onClick={handlPrintPdf}>
                 <Printer className="h-4 w-4" /> Print
+              </Button>
+              <Button className="print-hide" onClick={downloadExcel}>
+              <RiFileExcel2Line className="h-3 w-3 mr-1" /> Excel
+
               </Button>
             </div>
           </div>
