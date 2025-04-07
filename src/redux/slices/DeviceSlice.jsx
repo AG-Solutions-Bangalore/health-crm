@@ -15,7 +15,7 @@ const  devices= [
     {
       name: "device2",
       deviceid: "LT22CG1090",
-      macid: "64:f6:bb:83:78:0c"
+      macid: "64:f6:bb:83:74:c8"
     },
     {
       name: "device3",
