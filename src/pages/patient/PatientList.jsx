@@ -53,6 +53,7 @@ import { useNavigate } from "react-router-dom";
 
 import Layout from "@/components/Layout";
 import { useSelector } from "react-redux";
+import { Base_Url } from "@/config/BaseUrl";
 
 const PatientList = () => {
   const { selectedDevice } = useSelector((state) => state.device);
@@ -60,22 +61,22 @@ const PatientList = () => {
    const [isRefreshing, setIsRefreshing] = useState(false);
 
   const {
-    data: l,
+    data: patient,
     isLoading,
     isError,
     refetch,
     dataUpdatedAt,
   } = useQuery({
-    queryKey: ["l",deviceId],
+    queryKey: ["patient",deviceId],
     queryFn: async () => {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `/api/hc09/api/patient/ls?did=${deviceId}&by&since&size=100&sort=1`,
+        `${Base_Url}/api/panel-fetch-patient-by-mackid/${deviceId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      return response.data.l.reverse();
+      return response.data.patient.reverse();
     },
     enabled: !!deviceId
   });
@@ -173,7 +174,7 @@ const PatientList = () => {
 
   // Create the table instance
   const table = useReactTable({
-    data: l || [],
+    data: patient || [],
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,

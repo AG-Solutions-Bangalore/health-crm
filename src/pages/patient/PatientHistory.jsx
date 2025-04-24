@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from "react";
-
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
@@ -48,16 +47,16 @@ import {
 } from "@/components/ui/tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-
 import Layout from "@/components/Layout";
+import { Base_Url } from "@/config/BaseUrl";
 
 const PatientHistory = () => {
   const { id } = useParams();
   const location = useLocation();
   const { firstName, lastName } = location.state || {};
-   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
   const {
     data: responseData,
     isLoading,
@@ -65,16 +64,16 @@ const PatientHistory = () => {
     refetch,
     dataUpdatedAt,
   } = useQuery({
-    queryKey: ["l", id],
+    queryKey: ["patientHistory", id],
     queryFn: async () => {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `/api/hc09/api/test/ls?patientID=${id}&by&since&size=100&sort=1`,
+        `${Base_Url}/api/panel-fetch-patient-by-id/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      return response.data;
+      return response.data.patient[0]; // Extract the first patient object
     },
   });
 
@@ -99,7 +98,7 @@ const PatientHistory = () => {
   };
 
   const filteredData = useMemo(() => {
-    const dataList = responseData?.l || [];
+    const dataList = responseData?.patient_test || [];
 
     if (activeTab === "All") return dataList;
 
@@ -145,20 +144,13 @@ const PatientHistory = () => {
       header: "Action",
       cell: ({ row }) => {
         const reading = row.original;
-        if (reading.readingType === "ECG" && reading.ecgParameters?.pdfData) {
+        if (reading.readingType === "ECG" && reading.e_c_g_parameters?.[0]?.pdfData) {
           return (
             <Button
               variant="outline"
               size="sm"
               onClick={() => {
-             
-
-              
-
-
-
-
-                const byteCharacters = atob(reading.ecgParameters.pdfData);
+                const byteCharacters = atob(reading.e_c_g_parameters[0].pdfData);
                 const byteNumbers = new Array(byteCharacters.length);
                 for (let i = 0; i < byteCharacters.length; i++) {
                   byteNumbers[i] = byteCharacters.charCodeAt(i);
@@ -212,7 +204,7 @@ const PatientHistory = () => {
 
   // Calculate tab counts
   const tabCounts = useMemo(() => {
-    const dataList = responseData?.l || [];
+    const dataList = responseData?.patient_test || [];
     const counts = {
       All: dataList.length,
     };
@@ -228,6 +220,7 @@ const PatientHistory = () => {
 
     return counts;
   }, [responseData]);
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -236,6 +229,7 @@ const PatientHistory = () => {
       setIsRefreshing(false);
     }
   };
+
   if (isLoading) {
     return (
       <Layout>
@@ -271,38 +265,38 @@ const PatientHistory = () => {
   return (
     <Layout>
       <div className="w-full p-4">
-       <div className="flex items-center justify-between mb-2">
-              <h1 className="text-2xl text-gray-800">
-                Patient History of {firstName} {lastName}
-              </h1>
-              <div className="flex items-center space-x-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center text-xs text-gray-500 bg-gray-50 rounded-full px-3 py-1">
-                        <span>Last updated: {new Date(dataUpdatedAt).toLocaleTimeString()}</span>
-                       <Button 
-                                             variant="ghost" 
-                                             size="sm" 
-                                             onClick={handleRefresh} 
-                                             className="ml-2 p-1 hover:bg-gray-100 rounded-full"
-                                             disabled={isRefreshing}
-                                           >
-                                             {isRefreshing ? (
-                                               <Loader2 className="h-3 w-3 animate-spin" />
-                                             ) : (
-                                               <RefreshCw className="h-3 w-3" />
-                                             )}
-                                           </Button>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Click to refresh data</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </div>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-2xl text-gray-800">
+            Patient History of {firstName} {lastName}
+          </h1>
+          <div className="flex items-center space-x-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center text-xs text-gray-500 bg-gray-50 rounded-full px-3 py-1">
+                    <span>Last updated: {new Date(dataUpdatedAt).toLocaleTimeString()}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleRefresh} 
+                      className="ml-2 p-1 hover:bg-gray-100 rounded-full"
+                      disabled={isRefreshing}
+                    >
+                      {isRefreshing ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Click to refresh data</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
 
         {/* searching and column filter  */}
         <div className="flex items-center py-4">
@@ -349,14 +343,7 @@ const PatientHistory = () => {
           onValueChange={setActiveTab}
           className="w-full mb-4"
         >
-          <TabsList
-            className="
-          
-          
-          h-full grid grid-cols-2 md:grid-cols-4 lg:grid-cols-10 w-full shadow-lg
-          
-          "
-          >
+          <TabsList className="h-full grid grid-cols-2 md:grid-cols-4 lg:grid-cols-10 w-full shadow-lg">
             {[
               "All",
               "Pressure",
