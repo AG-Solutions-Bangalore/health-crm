@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/tooltip";
 import { ChevronDown, Download, Loader2, Printer, RefreshCw } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
-import { Base_Url } from "@/config/BaseUrl";
 
 const readingIcons = {
   Pressure: (
@@ -85,13 +84,14 @@ const readingTypeMappings = {
 const ReportView = () => {
   const { id } = useParams();
   const location = useLocation();
+  const { firstName, lastName, sex, city, email, address1, dob, cellNumber } =
+    location.state || {};
   const containerRef = useRef();
 
   // Date state
   const [selectedDate, setSelectedDate] = useState(null);
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  
+const [isRefreshing, setIsRefreshing] = useState(false);
   const {
     data: responseData,
     isLoading,
@@ -99,11 +99,11 @@ const ReportView = () => {
     refetch,
     dataUpdatedAt,
   } = useQuery({
-    queryKey: ["patient", id],
+    queryKey: ["l", id],
     queryFn: async () => {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `${Base_Url}/api/panel-fetch-patient-by-id/${id}`,
+        `/api/hc09/api/test/ls?patientID=${id}&by&since&size=100&sort=1`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -113,29 +113,14 @@ const ReportView = () => {
     enabled: !!id,
   });
 
-
-  const patientData = useMemo(() => {
-    if (!responseData || !responseData.patient || responseData.patient.length === 0) {
-      return null;
-    }
-    return responseData.patient[0];
-  }, [responseData]);
-
-  const patientReadings = useMemo(() => {
-    if (!patientData || !patientData.patient_test) {
-      return { l: [] };
-    }
-    return { l: patientData.patient_test };
-  }, [patientData]);
-
   const { availableDates, mostRecentDate } = useMemo(() => {
-    if (!patientReadings || !patientReadings.l)
+    if (!responseData || !responseData.l)
       return { availableDates: [], mostRecentDate: null };
 
     const dates = new Set();
     let latestDate = null;
 
-    patientReadings.l.forEach((reading) => {
+    responseData.l.forEach((reading) => {
       const dateStr = moment(reading.readingTimeUTC).format("YYYY-MM-DD");
       dates.add(dateStr);
 
@@ -155,7 +140,7 @@ const ReportView = () => {
         ? moment(latestDate).format("YYYY-MM-DD")
         : null,
     };
-  }, [patientReadings]);
+  }, [responseData]);
 
   useEffect(() => {
     if (mostRecentDate && selectedDate === null) {
@@ -164,21 +149,21 @@ const ReportView = () => {
   }, [mostRecentDate, selectedDate]);
 
   useEffect(() => {
-    if (patientReadings) {
-      if (patientReadings.l && patientReadings.l.length === 0) {
+    if (responseData) {
+      if (responseData.l && responseData.l.length === 0) {
         setSelectedDate("all");
       } else if (mostRecentDate && selectedDate === null) {
         setSelectedDate(mostRecentDate);
       }
     }
-  }, [patientReadings, mostRecentDate, selectedDate]);
+  }, [responseData, mostRecentDate, selectedDate]);
 
   const organizedReadings = useMemo(() => {
-    if (!patientReadings || !patientReadings.l) return {};
+    if (!responseData || !responseData.l) return {};
 
     const organized = {};
 
-    patientReadings.l.forEach((reading) => {
+    responseData.l.forEach((reading) => {
       const readingDate = new Date(reading.readingTimeUTC);
       const readingDateStr = moment(readingDate).format("YYYY-MM-DD");
 
@@ -204,7 +189,7 @@ const ReportView = () => {
     });
 
     return organized;
-  }, [patientReadings, selectedDate]);
+  }, [responseData, selectedDate]);
 
   const handlPrintPdf = useReactToPrint({
     content: () => containerRef.current,
@@ -317,9 +302,11 @@ const ReportView = () => {
     }
 
     const formattedValue = reading.readingValue;
+
+
+
     return formattedValue;
   };
-
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -328,10 +315,6 @@ const ReportView = () => {
       setIsRefreshing(false);
     }
   };
-
-  // Use patient data from the new API response
-  const { firstName, lastName, sex, city, email, address1, dob, cellNumber } = patientData || {};
-
   return (
     <Layout>
       <div className="p-4 print:p-2" ref={containerRef}>
@@ -346,44 +329,44 @@ const ReportView = () => {
             </div>
           </div>
           <div className="flex flex-col md:flex-row items-center gap-2">
-            <div className="flex items-center space-x-2 print-hide">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center text-xs text-gray-500 bg-gray-50 rounded-full px-3 py-1">
-                      <span>
-                        Last updated:{" "}
-                        {new Date(dataUpdatedAt).toLocaleTimeString()}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleRefresh}
-                        className="ml-2 p-1 hover:bg-gray-100 rounded-full"
-                        disabled={isRefreshing}
-                      >
-                        {isRefreshing ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <RefreshCw className="h-3 w-3" />
-                        )}
-                      </Button>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Click to refresh data</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="print-hide"
-              onClick={handlPrintPdf}
-            >
-              <Printer className="h-4 w-4" /> Report
-            </Button>
+          <div className="flex items-center space-x-2 print-hide">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center text-xs text-gray-500 bg-gray-50 rounded-full px-3 py-1">
+                    <span>
+                      Last updated:{" "}
+                      {new Date(dataUpdatedAt).toLocaleTimeString()}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRefresh}
+                      className="ml-2 p-1 hover:bg-gray-100 rounded-full"
+                      disabled={isRefreshing}
+                    >
+                      {isRefreshing ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Click to refresh data</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="print-hide"
+            onClick={handlPrintPdf}
+          >
+            <Printer className="h-4 w-4" /> Report
+          </Button>
           </div>
         </div>
 
@@ -413,7 +396,7 @@ const ReportView = () => {
             </div>
             <div>
               <strong className="text-gray-700">City:</strong>{" "}
-              {city ? city.charAt(0).toUpperCase() + city.slice(1) : "N/A"}
+              {city.charAt(0).toUpperCase() + city.slice(1) || "N/A"}
             </div>
             <div className="md:col-span-2 lg:col-span-3">
               <strong className="text-gray-700">Address:</strong>{" "}

@@ -21,8 +21,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import ExcelJS from "exceljs";
 import { RiFileExcel2Line } from "react-icons/ri";
-import { Base_Url } from "@/config/BaseUrl";
-
 const readingTypeMappings = {
   Pressure: ["BPSITL"],
   Glucose: ["GLF", "GL", "GLR", "GLFMM", "GLRMM", "GLMM"],
@@ -60,22 +58,22 @@ const PatientSummary = () => {
 
   // Query to get patient list
   const {
-    data: patientData,
+    data: patientList,
     isLoading: isLoadingPatients,
     isError: isErrorPatients,
     refetch: refetchPatients,
     dataUpdatedAt,
   } = useQuery({
-    queryKey: ["patient", deviceId],
+    queryKey: ["patientList", deviceId],
     queryFn: async () => {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `${Base_Url}/api/panel-fetch-patient-by-mackid/${deviceId}`,
+        `/api/hc09/api/patient/ls?did=${deviceId}&by&since&size=100&sort=1`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      return response.data.patient.reverse();
+      return response.data.l.reverse();
     },
     enabled: !!deviceId,
   });
@@ -87,20 +85,20 @@ const PatientSummary = () => {
     isError: isErrorReadings,
     refetch: refetchReadings,
   } = useQuery({
-    queryKey: ["allPatientReadings", patientData],
+    queryKey: ["allPatientReadings", patientList],
     queryFn: async () => {
       const token = localStorage.getItem("token");
-      if (!patientData) return {};
+      if (!patientList) return {};
 
-      const readingPromises = patientData.map((patient) =>
+      const readingPromises = patientList.map((patient) =>
         axios
           .get(
-            `${Base_Url}/api/panel-fetch-patient-by-id/${patient.patientID}`,
+            `/api/hc09/api/test/ls?patientID=${patient.patientID}&by&since&size=100&sort=1`,
             { headers: { Authorization: `Bearer ${token}` } }
           )
           .then((res) => ({ 
             patientID: patient.patientID,
-            readings: res.data.patient[0]?.patient_test || [],
+            readings: res.data.l || [],
           }))
       );
 
@@ -110,7 +108,7 @@ const PatientSummary = () => {
         return acc;
       }, {});
     },
-    enabled: !!patientData && patientData.length > 0,
+    enabled: !!patientList && patientList.length > 0,
   });
 
   const formatReadingValue = (reading) => {
@@ -127,11 +125,11 @@ const PatientSummary = () => {
     return `${reading.readingValue} ${readingUnits[reading.readingType] || ""}`;
   };
 
-  // Get latest readings for each patient and each category
+  // Get latest readings for each patient and each category -- see report view for more understanding
   const patientSummaryData = useMemo(() => {
-    if (!patientData || !allReadings) return [];
+    if (!patientList || !allReadings) return [];
 
-    return patientData.map((patient) => {
+    return patientList.map((patient) => {
       const readings = allReadings[patient.patientID] || [];
 
       const latestReadings = {};
@@ -155,8 +153,7 @@ const PatientSummary = () => {
         latestReadings,
       };
     });
-  }, [patientData, allReadings]);
-
+  }, [patientList, allReadings]);
   const downloadExcel = async () => {
     if (!patientSummaryData || patientSummaryData.length === 0) {
       console.warn("No data available to export");
@@ -166,6 +163,8 @@ const PatientSummary = () => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Patient Summary");
   
+ 
+
     const headers = ["Sl No", "Patient Name", "Pressure", "Glucose", "Heartrate", "Time"];
   
     // Add headers to worksheet
@@ -194,6 +193,7 @@ const PatientSummary = () => {
           : ""
       ]);
   
+     
       row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
         if (colNumber === 1) { // Sl No
           cell.alignment = { horizontal: 'center' };
@@ -232,7 +232,6 @@ const PatientSummary = () => {
     link.click();
     URL.revokeObjectURL(url);
   };
-
   const handlPrintPdf = useReactToPrint({
     content: () => containerRef.current,
     documentTitle: "patient-summary",
@@ -290,7 +289,7 @@ const PatientSummary = () => {
       </Layout>
     );
   }
-
+  // #6A9AD0
   if (isError) {
     return (
       <Layout>
@@ -362,7 +361,8 @@ const PatientSummary = () => {
                 <Printer className="h-4 w-4" /> Print
               </Button>
               <Button className="print-hide" onClick={downloadExcel}>
-                <RiFileExcel2Line className="h-3 w-3 mr-1" /> Excel
+              <RiFileExcel2Line className="h-3 w-3 mr-1" /> Excel
+
               </Button>
             </div>
           </div>
