@@ -1,60 +1,73 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { Base_Url } from '@/config/Baseurl';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import axios from 'axios';
 
-
-const  devices= [
-    {
-      name: "device 5",
-      deviceid: "test(1056)",
-      macid: "64:f6:bb:83:7b:d9"
-    },
-    {
-      name: "device1",
-      deviceid: "LT22CG1137",
-      macid: "64:f6:bb:83:78:70"
-    },
-    {
-      name: "device2",
-      deviceid: "LT22CG1090",
-      macid: "64:f6:bb:83:74:c8"
-    },
-    {
-      name: "device3",
-      deviceid: "LT22CG1092",
-      macid: "64:f6:bb:83:75:d9"
-    },
-    {
-      name: "device4",
-      deviceid: "LT22CG1094",
-      macid: "64:f6:bb:83:7a:3d"
-    },
-    {
-      name: "device6",
-      deviceid: "LT22CG1074",
-      macid: "64:f6:bb:83:78:0c"
+export const fetchDevices = createAsyncThunk(
+  'device/fetchDevices',
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${Base_Url}/api/panel-fetch-device`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return response.data.device;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
     }
-  ]
-
+  }
+);
 
 const initialState = {
-    devices,
-    selectedDevice: devices[0]
- 
+    devices: [],
+    selectedDevice: null,
+    status: 'idle',
+    error: null,
+    lastFetched: null // Add timestamp of last fetch
 };
-
 
 const DeviceSlice = createSlice({
     name: 'device',
     initialState,
     reducers: {
       setSelectedDevice: (state, action) => {
-  
         const device = state.devices.find(d => d.macid === action.payload);
         if (device) {
           state.selectedDevice = device;
         }
+      },
+      // Add a reducer to manually refresh devices if needed
+      refreshDevices: (state) => {
+        state.lastFetched = null;
       }
+    },
+    extraReducers(builder) {
+      builder
+        .addCase(fetchDevices.pending, (state) => {
+          state.status = 'loading';
+        })
+        .addCase(fetchDevices.fulfilled, (state, action) => {
+          state.status = 'succeeded';
+          state.lastFetched = Date.now();
+          state.devices = action.payload.map(device => ({
+            name: device.deviceNameOrId,
+            deviceid: device.deviceNameOrId,
+            macid: device.deviceMacAddress
+          }));
+          
+          if (!state.selectedDevice && action.payload.length > 0) {
+            state.selectedDevice = {
+              name: action.payload[0].deviceNameOrId,
+              deviceid: action.payload[0].deviceNameOrId,
+              macid: action.payload[0].deviceMacAddress
+            };
+          }
+        })
+        .addCase(fetchDevices.rejected, (state, action) => {
+          state.status = 'failed';
+          state.error = action.payload?.message || 'Failed to fetch devices';
+        });
     }
-  });
+});
 
-export const { setSelectedDevice } = DeviceSlice.actions;
+export const { setSelectedDevice, refreshDevices } = DeviceSlice.actions;
 export default DeviceSlice.reducer;
