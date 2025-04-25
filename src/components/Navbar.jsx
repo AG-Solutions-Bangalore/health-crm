@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FaBars,
   FaTimes,
@@ -19,7 +19,9 @@ import {
 } from "./ui/select";
 import { Button } from "./ui/button";
 import { useDispatch, useSelector } from "react-redux";
-import { setSelectedDevice } from "@/redux/slices/DeviceSlice";
+import { setSelectedDevice, fetchDevices } from "@/redux/slices/DeviceSlice";
+import Logout from "./logOut/Logout";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 const Navbar = ({
   toggleSidebar,
@@ -30,21 +32,48 @@ const Navbar = ({
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { devices, selectedDevice } = useSelector((state) => state.device);
+  const { devices, selectedDevice, status, error ,lastFetched} = useSelector((state) => state.device);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/");
-    toast.success("LogOut Successfully");
-  };
+  useEffect(() => {
+    
+    if (!lastFetched || Date.now() - lastFetched > 300000) {
+      dispatch(fetchDevices());
+    }
+  }, [dispatch, lastFetched]);
+
+  useEffect(() => {
+    if (status === 'failed' && error) {
+      toast.error("Failed to load devices: " + error);
+    }
+  }, [status, error]);
+
+  // Loading animation effect
+  useEffect(() => {
+    if (status === 'loading') {
+      const interval = setInterval(() => {
+        setLoadingProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return prev + Math.floor(Math.random() * 5) + 1;
+        });
+      }, 100);
+
+      return () => clearInterval(interval);
+    } else {
+      setLoadingProgress(0);
+    }
+  }, [status]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch((e) => {
-        console.log(`Error attempting to enable fullscreen: ${e.message}`);
+        toast.error(`Fullscreen error: ${e.message}`);
       });
       setIsFullscreen(true);
     } else {
@@ -57,6 +86,7 @@ const Navbar = ({
 
   const handleDeviceChange = (macid) => {
     dispatch(setSelectedDevice(macid));
+    toast.success(`Device ${devices.find(d => d.macid === macid)?.deviceid} selected`);
   };
 
   return (
@@ -123,29 +153,63 @@ const Navbar = ({
         </div>
         <div className="flex items-center gap-2">
           <div className="hidden lg:flex items-center gap-2">
-            <Select
-              value={selectedDevice?.macid || ""}
-              onValueChange={handleDeviceChange}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select a device" />
-              </SelectTrigger>
-              <SelectContent>
-                {devices.map((device) => (
-                  <SelectItem key={device.macid} value={device.macid}>
-                    {device.deviceid}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {status === 'loading' ? (
+              <div className="w-[180px] h-10 flex items-center justify-center relative">
+                <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-blue-500 transition-all duration-300 ease-out"
+                    style={{ width: `${loadingProgress}%` }}
+                  ></div>
+                </div>
+                <span className="absolute text-xs text-blue-600">
+                  {loadingProgress}%
+                </span>
+              </div>
+            ) : (
+              <Select
+                value={selectedDevice?.macid || ""}
+                onValueChange={handleDeviceChange}
+                disabled={status !== 'succeeded'}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue 
+                    placeholder={
+                      status === 'failed' ? "Error loading devices" : 
+                      devices.length === 0 ? "No devices" :
+                      selectedDevice ? selectedDevice.deviceid : "Select a device"
+                    } 
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {devices.map((device) => (
+                    <SelectItem key={device.macid} value={device.macid}>
+                      {device.deviceid}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
-            <button
-              onClick={toggleFullscreen}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              aria-label="Toggle fullscreen"
-            >
-              {isFullscreen ? <FaCompress size={20} /> : <FaExpand size={20} />}
-            </button>
+<TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleFullscreen}
+                  className={`p-2 hover:bg-gray-100rounded-lg transition-colors`}
+                  aria-label="Toggle fullscreen"
+                >
+                  {isFullscreen ? <FaCompress size={18} /> : <FaExpand size={18} />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+
           </div>
 
           <div className="relative lg:hidden">
@@ -157,30 +221,53 @@ const Navbar = ({
               <FaUserCircle className="text-blue-700" size={20} />
             </button>
 
-            {/* Dropdown menu */}
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 p-2 flex flex-col items-center gap-4  bg-white border border-gray-200 rounded-lg shadow-lg">
-                <Select
-              value={selectedDevice?.macid || ""}
-              onValueChange={handleDeviceChange}
-            >
-              <SelectTrigger >
-                <SelectValue placeholder="Select a device" />
-              </SelectTrigger>
-              <SelectContent>
-                {devices.map((device) => (
-                  <SelectItem key={device.macid} value={device.macid}>
-                    {device.deviceid}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <div className="absolute right-0 mt-2 p-2 flex flex-col items-center gap-4 bg-white border border-gray-200 rounded-lg shadow-lg">
+                {status === 'loading' ? (
+                  <div className="w-[180px] h-10 flex items-center justify-center relative">
+                    <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-blue-500 transition-all duration-300 ease-out"
+                        style={{ width: `${loadingProgress}%` }}
+                      ></div>
+                    </div>
+                    <span className="absolute text-xs text-blue-600">
+                      {loadingProgress}%
+                    </span>
+                  </div>
+                ) : (
+                  <Select
+                    value={selectedDevice?.macid || ""}
+                    onValueChange={(value) => {
+                      handleDeviceChange(value);
+                      setIsDropdownOpen(false);
+                    }}
+                    disabled={status !== 'succeeded'}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue 
+                        placeholder={
+                          status === 'failed' ? "Error" : 
+                          devices.length === 0 ? "No devices" :
+                          selectedDevice ? selectedDevice.deviceid : "Select device"
+                        } 
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {devices.map((device) => (
+                        <SelectItem key={device.macid} value={device.macid}>
+                          {device.deviceid}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 <Button
                   onClick={() => {
                     setIsDropdownOpen(false);
                     setIsLogoutDialogOpen(true);
                   }}
-                  className="w-full bg-gray-50 text-black px-4 py-2 text-sm  hover:bg-gray-100 text-left"
+                  className="w-full   px-4 py-2 text-sm hover:bg-gray-100 text-left"
                 >
                   Logout
                 </Button>
@@ -188,36 +275,22 @@ const Navbar = ({
             )}
           </div>
           <div className="hidden lg:flex items-center gap-2">
-            <Button onClick={() => setIsLogoutDialogOpen(true)}>Logout</Button>
+            <Button 
+              onClick={() => setIsLogoutDialogOpen(true)}
+              variant="default"
+            >
+              Logout
+            </Button>
           </div>
         </div>
       </div>
 
-      {isLogoutDialogOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <p className="text-gray-700 mb-4">
-              Are you sure you want to logout?
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setIsLogoutDialogOpen(false)}
-                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 text-sm text-white bg-red-500 hover:bg-red-600 rounded-lg"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Logout open={isLogoutDialogOpen} handleOpen={setIsLogoutDialogOpen} />
     </nav>
   );
 };
 
 export default Navbar;
+
+
+//sajid 

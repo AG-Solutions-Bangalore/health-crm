@@ -1,4 +1,4 @@
-import {   Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import AuthRoute from "./AuthRoute";
 import ProtectedRoute from "./ProtectedRoute";
 import SignIn from "../pages/auth/SignIn";
@@ -9,33 +9,59 @@ import PatientList from "@/pages/patient/PatientList";
 import PatientHistory from "@/pages/patient/PatientHistory";
 import ReportView from "@/pages/report/ReportView";
 import PatientSummary from "@/pages/summary/PatientSummary";
-
+import DeviceList from "@/pages/device/DeviceList";
+import TeamList from "@/pages/team/TeamList";
+import UserPage from "@/pages/userManagement/UserPage";
+import CreatePage from "@/pages/userManagement/CreatePage";
+import ManagementDashboard from "@/pages/userManagement/ManagementDashboard";
+import CreateButton from "@/pages/userManagement/CreateButton";
+import UserTypeList from "@/pages/userType/UserTypeList";
+import EditUserType from "@/pages/userType/EditUserType";
+import ForgotPassword from "@/pages/auth/ForgotPassword";
+import Maintenance from "@/pages/auth/Maintenance";
 
 function AppRoutes() {
   return (
-
-      <Routes>
-        <Route path="/" element={<AuthRoute />}>
+    <Routes>
+      <Route path="/" element={<AuthRoute />}>
         <Route path="/" element={<SignIn />} />
-          
-        </Route>
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/maintenance" element={<Maintenance />} />
+      </Route>
 
-        <Route path="/" element={<ProtectedRoute />}>
+      <Route path="/" element={<ProtectedRoute />}>
         <Route path="/home" element={<Dashboard />} />
 
-               <Route path="/patient" element={<PatientList />} />
-           
-               <Route path="/patient/history/:id" element={<PatientHistory />} />
-        
-                <Route path="/patient/report/:id" element={<ReportView />} />
-                <Route path="/summary" element={<PatientSummary />} />
-   
+        <Route path="/patient" element={<PatientList />} />
 
-        </Route>
+        <Route path="/patient/history/:id" element={<PatientHistory />} />
 
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    
+        <Route path="/patient/report/:id" element={<ReportView />} />
+        <Route path="/summary" element={<PatientSummary />} />
+
+        {/* device  */}
+        <Route path="/device" element={<DeviceList />} />
+
+        {/* team list  */}
+        {/* <Route path="/team" element={<TeamList />} /> */}
+        {/* user management */}
+        <Route path="/userManagement" element={<UserPage />} />
+        <Route
+          path="/management-dashboard/:id"
+          element={<ManagementDashboard />}
+        />
+        <Route path="/page-management" element={<CreatePage />} />
+        <Route path="/button-management" element={<CreateButton />} />
+
+        {/* usertype */}
+        <Route path="/user-type" element={<UserTypeList />} />
+        <Route path="/edit-user-type/:id" element={<EditUserType />} />
+      </Route>
+
+
+
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
 

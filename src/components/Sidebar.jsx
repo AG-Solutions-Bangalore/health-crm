@@ -1,16 +1,63 @@
 import { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import {
+  BookmarkCheck,
+  Building2,
+  ChevronDown,
+  ChevronUp,
+  FolderGit2,
+  House,
+  User,
+} from "lucide-react";
+import { Upgrade } from "./upgrade/Upgrade";
 
-import { BookmarkCheck, Building2, ChevronDown, ChevronUp, FolderGit2, House, User } from "lucide-react";
+const isItemAllowed = (item, pageControl, userId) => {
+  const itemUrl = item.path?.replace(/^\//, "");
+  return pageControl.some(
+    (control) =>
+      control.page === item.name &&
+      control.url === itemUrl &&
+      control.userIds.includes(userId) &&
+      control.status === "Active"
+  );
+};
+
+const filterMenuItems = (items, pageControl, userId) => {
+  if (!items) return [];
+
+  return items.reduce((acc, item) => {
+    if (item.subitems) {
+      const filteredItems = filterMenuItems(item.subitems, pageControl, userId);
+      if (filteredItems.length > 0) {
+        acc.push({
+          ...item,
+          subitems: filteredItems,
+        });
+      }
+    } else if (isItemAllowed(item, pageControl, userId)) {
+      acc.push(item);
+    }
+    return acc;
+  }, []);
+};
 
 const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
   const [openSubmenu, setOpenSubmenu] = useState("");
-  const location = useLocation(); 
+  const location = useLocation();
+  const userId = localStorage.getItem("id");
+  const pageControl = JSON.parse(localStorage.getItem("pageControl")) || [];
+  const userName = localStorage.getItem("name");
+  const userEmail = localStorage.getItem("email");
 
-  const menuItems = [
+  const allMenuItems = [
     {
       name: "Dashboard",
       path: "/home",
+      icon: House,
+    },
+    {
+      name: "Device",
+      path: "/device",
       icon: House,
     },
     {
@@ -18,16 +65,25 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
       path: "/patient",
       icon: Building2,
     },
-   
     {
       name: "Summary",
       path: "/summary",
       icon: Building2,
     },
-   
- 
-    
+    {
+      name: "User Management",
+      path: "/userManagement",
+      icon: Building2,
+    },
+    {
+      name: "UserType",
+      path: "/user-type",
+      icon: Building2,
+    },
   ];
+
+  const menuItems = filterMenuItems(allMenuItems, pageControl, userId);
+
   useEffect(() => {
     const currentSubmenu = menuItems.find((item) =>
       item.subitems?.some((subitem) => subitem.path === location.pathname)
@@ -36,7 +92,7 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
     if (currentSubmenu) {
       setOpenSubmenu(currentSubmenu.name);
     }
-  }, [location.pathname]);
+  }, [location.pathname, menuItems]);
 
   const handleSubmenuClick = (itemName) => {
     setOpenSubmenu(openSubmenu === itemName ? "" : itemName);
@@ -58,12 +114,12 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
       )}
 
       <div
-        className={`fixed left-0 top-16 h-[calc(100vh-4rem)] bg-gray-50 border-r border-gray-200 transition-all duration-300 ease-in-out
-        ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        ${isCollapsed ? "lg:w-16" : "lg:w-64"}
-        w-64 z-40 overflow-y-auto`}
+        className={`fixed left-0 top-16 h-[calc(100vh-4rem)] bg-gray-50 border-r border-gray-200 transition-all duration-300 ease-in-out flex flex-col
+             ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+             ${isCollapsed ? "lg:w-16" : "lg:w-64"}
+             w-64 z-40`}
       >
-        <div className="p-4">
+        <div className="flex-1 overflow-y-auto p-4">
           {menuItems.map((item) => (
             <div key={item.name}>
               {item.subitems ? (
@@ -90,13 +146,13 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
                   to={item.path}
                   onClick={handleLinkClick}
                   className={({ isActive }) => `
-                  mb-1 flex items-center gap-3 p-2 rounded-lg transition-colors
-                  ${
-                    isActive
-                      ? "bg-black text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }
-                `}
+                       mb-1 flex items-center gap-3 p-2 rounded-lg transition-colors
+                       ${
+                         isActive
+                           ? "bg-black text-white"
+                           : "text-gray-700 hover:bg-gray-100"
+                       }
+                     `}
                 >
                   <item.icon className="w-5 h-5" />
                   {!isCollapsed && (
@@ -113,13 +169,13 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
                       to={subItem.path}
                       onClick={handleLinkClick}
                       className={({ isActive }) => `
-                      py-2 px-3 text-sm rounded-lg block transition-colors
-                      ${
-                        isActive
-                          ? "bg-accent-50 text-accent-600"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }
-                    `}
+                           py-2 px-3 text-sm rounded-lg block transition-colors
+                           ${
+                             isActive
+                               ? "bg-accent-50 text-accent-600"
+                               : "text-gray-600 hover:bg-gray-100"
+                           }
+                         `}
                     >
                       {subItem.name}
                     </NavLink>
@@ -129,9 +185,29 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
             </div>
           ))}
         </div>
+
+        {/* User Info and Upgrade Section */}
+        <div className="p-3 border-t border-gray-200">
+          {!isCollapsed && (
+            <div className="mb-1">
+              <div className="flex items-center gap-3 p-2">
+                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-gray-200 text-gray-700 font-medium">
+                  {userName?.charAt(0).toUpperCase()}
+                </div>
+                <div className="overflow-hidden">
+                  <p className="text-sm font-medium truncate">{userName}</p>
+                  <p className="text-xs text-gray-500 truncate">{userEmail}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <Upgrade isCollapsed={isCollapsed} />
+        </div>
       </div>
     </>
   );
 };
 
 export default Sidebar;
+
+//sajids

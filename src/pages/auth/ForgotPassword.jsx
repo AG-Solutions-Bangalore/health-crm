@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -7,20 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Base_Url } from "@/config/BaseUrl";
-import { ContextPanel } from "@/lib/ContextPanel";
+import { Base_Url } from "@/config/Baseurl";
 
-export default function LoginAuth() {
+export default function ForgotPassword() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUserName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
-  const { fetchPagePermission, fetchPermissions } = useContext(ContextPanel);
   const navigate = useNavigate();
 
   const loadingMessages = [
-    "Authenticating...",
-    "Loading dashboard...",
+    "Processing request...",
+    "Sending password...",
     "Finalizing...",
   ];
 
@@ -37,42 +35,36 @@ export default function LoginAuth() {
     return () => clearInterval(intervalId);
   }, [isLoading]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setIsLoading(true);
 
+    const formData = new FormData();
+    formData.append("email", email);
+    formData.append("username", username);
+
     try {
-      const formData = new FormData();
-      formData.append("username", email);
-      formData.append("password", password);
+      const res = await axios.post(
+        `${Base_Url}/api/panel-send-password`,
+        formData
+      );
 
-      const { data } = await axios.post(`${Base_Url}/api/panel-login`, formData);
-      
-      if (!data?.UserInfo?.token) {
-        throw new Error("No token received");
+      if (res.status === 200) {
+        const response = res.data;
+
+        if (response.code === 200) {
+          toast.success(response.msg);
+        } else if (response.code === 400) {
+          toast.error(response.msg);
+        } else {
+          toast.error(response.msg);
+        }
+      } else {
+        toast.error("Unexpected response from the server.");
       }
-
-      const { UserInfo, userN, company_detils, version } = data;
-      
-      // Store user data
-      localStorage.setItem("token", UserInfo.token);
-      localStorage.setItem("allUsers", JSON.stringify(userN));
-      localStorage.setItem("id", UserInfo.user.id);
-      localStorage.setItem("name", UserInfo.user.name);
-      localStorage.setItem("userType", UserInfo.user.user_type);
-      localStorage.setItem("email", UserInfo.user.email);
-      localStorage.setItem("user_position", UserInfo.user.user_position);
-      localStorage.setItem("companyID", UserInfo.user.company_id);
-      localStorage.setItem("token-expire-time", UserInfo.token_expires_at);
-      localStorage.setItem("companyName", company_detils?.company_name);
-      localStorage.setItem("companyEmail", company_detils?.company_email);
-      localStorage.setItem("verCon", version?.version_panel);
-      await fetchPermissions();
-      await fetchPagePermission();
-      navigate("/patient");
     } catch (error) {
-      console.error("Login error:", error);
-      toast.error(error.response?.data?.message || "Authentication failed");
+      toast.error(error.response?.data?.message || "Please try again later.");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -93,10 +85,10 @@ export default function LoginAuth() {
         <Card className="border-0 shadow-sm">
           <CardHeader className="text-center space-y-2 pb-4">
             <CardTitle className="text-2xl font-medium text-gray-800">
-              Ag-Solution
+              Forgot Password
             </CardTitle>
             <p className="text-sm text-gray-500">
-              Health Care Management System
+              Enter your username and email to reset password
             </p>
           </CardHeader>
           
@@ -104,13 +96,13 @@ export default function LoginAuth() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium">
-                  Username
+                  Email
                 </Label>
                 <Input
                   id="email"
-                  type="text"
+                  type="email"
+                  placeholder="Enter your email"
                   value={email}
-                      placeholder="Enter your username"
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-10"
                   required
@@ -118,15 +110,15 @@ export default function LoginAuth() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium">
-                  Password
+                <Label htmlFor="username" className="text-sm font-medium">
+                  Username
                 </Label>
                 <Input
-                  id="password"
-                  type="password"
-                      placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  id="username"
+                  type="text"
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUserName(e.target.value)}
                   className="h-10"
                   required
                 />
@@ -145,16 +137,16 @@ export default function LoginAuth() {
                     </svg>
                     {loadingMessage}
                   </span>
-                ) : "Sign In"}
+                ) : "Reset Password"}
               </Button>
               
               <div className="text-right">
                 <button 
                   type="button"
-                  onClick={() => navigate("/forgot-password")}
+                  onClick={() => navigate("/")}
                   className="text-xs text-gray-500 hover:text-gray-700 hover:underline"
                 >
-                  Forgot password?
+                  Back to Sign In
                 </button>
               </div>
             </form>
