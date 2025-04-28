@@ -18,6 +18,7 @@ import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { Base_Url } from "@/config/BaseUrl";
 import { DeviceCreate } from "@/components/buttonIndex/ButtonComponents";
+import { Textarea } from "@/components/ui/textarea";
 
 const CreateDevice = () => {
   const [open, setOpen] = useState(false);
@@ -29,6 +30,7 @@ const CreateDevice = () => {
   const [formData, setFormData] = useState({
     deviceNameOrId: "",
     deviceMacAddress: "",
+    deviceRemark: "",
   });
 
   const handleInputChange = (e) => {
@@ -66,6 +68,7 @@ const CreateDevice = () => {
         setFormData({
           deviceNameOrId: "",
           deviceMacAddress: "",
+          deviceRemark: "",
         });
         await queryClient.invalidateQueries(["device"]);
         setOpen(false);
@@ -124,6 +127,17 @@ const CreateDevice = () => {
               value={formData.deviceMacAddress}
               onChange={handleInputChange}
               placeholder="Enter mac address name"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="deviceRemark">Remark</Label>
+            <Textarea
+              id="deviceRemark"
+              name="deviceRemark"
+              value={formData.deviceRemark}
+              onChange={handleInputChange}
+              placeholder="Enter remark"
+              
             />
           </div>
         </div>
