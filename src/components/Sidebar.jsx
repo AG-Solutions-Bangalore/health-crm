@@ -7,8 +7,15 @@ import {
   ChevronUp,
   FolderGit2,
   House,
-  User,
+  LayoutDashboard, 
+  Cpu, 
+  User, 
+  ClipboardList, 
+  Users, 
+  UserCog,
+  UserCheck ,
 } from "lucide-react";
+
 import { Upgrade } from "./upgrade/Upgrade";
 
 const isItemAllowed = (item, pageControl, userId) => {
@@ -53,32 +60,32 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
     {
       name: "Dashboard",
       path: "/home",
-      icon: House,
+      icon: LayoutDashboard,
     },
     {
       name: "Device",
       path: "/device",
-      icon: House,
+      icon: Cpu,
     },
     {
       name: "Patient",
       path: "/patient",
-      icon: Building2,
+      icon: User,
     },
     {
       name: "Summary",
       path: "/summary",
-      icon: Building2,
+      icon: ClipboardList,
     },
     {
       name: "User Management",
       path: "/userManagement",
-      icon: Building2,
+      icon: UserCog,
     },
     {
       name: "UserType",
       path: "/user-type",
-      icon: Building2,
+      icon: UserCheck,
     },
   ];
 

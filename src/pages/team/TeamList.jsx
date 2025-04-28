@@ -249,7 +249,7 @@ const TeamList = () => {
         </DropdownMenu>
 
         <CreateTeam />
-        <Button
+        {/* <Button
           onClick={() => navigate("/page-management")}
           className={`ml-2 `}
         >
@@ -260,7 +260,7 @@ const TeamList = () => {
           className={`ml-2 `}
         >
            <SquarePlus className="h-4 w-4" /> Button
-        </Button>
+        </Button> */}
       </div>
       {/* table  */}
       <div className="rounded-md border">

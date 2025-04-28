@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import {  useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
   flexRender,
@@ -11,21 +11,26 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import {
-  ArrowUpDown,
   ChevronDown,
-  ClipboardList,
-  Edit,
-  Edit2,
-  Eye,
   Loader2,
   RefreshCw,
   Search,
-  SquarePlus,
-  Trash,
-  UserPen,
-  View,
+  MoreVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -48,20 +53,23 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
 import { useNavigate } from "react-router-dom";
-
 import Layout from "@/components/Layout";
 import { useSelector } from "react-redux";
 import { Base_Url } from "@/config/BaseUrl";
 import { PatientHistory, PatientReport } from "@/components/buttonIndex/ButtonComponents";
+import { toast } from "sonner";
 
 const PatientList = () => {
   const { selectedDevice } = useSelector((state) => state.device);
   const deviceId = selectedDevice?.macid;
-
   const [isRefreshing, setIsRefreshing] = useState(false);
-
+const [statusUpdateState, setStatusUpdateState] = useState({
+    open: false,
+    patientId: null,
+    selectedStatus: "",
+    currentStatus: ""
+  });
   const {
     data: patient,
     isLoading,
@@ -85,6 +93,45 @@ const PatientList = () => {
     },
     enabled: !!deviceId,
   });
+
+  const { mutate: updateStatus } = useMutation({
+    mutationFn: async ({ patientId, newStatus }) => {
+      const token = localStorage.getItem("token");
+      const response = await axios.put(
+        `${Base_Url}/api/panel-update-patient-status/${patientId}`,
+        { status: newStatus },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      return response.data;
+    },
+    onSuccess: (response) => {
+      refetch();
+      toast.success(response?.msg || "Status updated successfully")
+      setStatusUpdateState(prev => ({
+        ...prev,
+        open: false,
+        patientId: null,
+        selectedStatus: "",
+        currentStatus: ""
+      }));
+    },
+    onError: (error) => {
+      console.error("Error updating status:", error);
+      toast.error("Error updating status ")
+    }
+  });
+
+  const handleStatusUpdate = () => {
+    if (statusUpdateState.selectedStatus !== statusUpdateState.currentStatus) {
+      updateStatus({
+        patientId: statusUpdateState.patientId,
+        newStatus: statusUpdateState.selectedStatus
+      });
+    }
+  };
+
   const [sorting, setSorting] = useState([]);
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
@@ -98,6 +145,7 @@ const PatientList = () => {
       header: "Email",
       cell: ({ row }) => <div>{row.getValue("email")}</div>,
     },
+  
     {
       accessorKey: "firstName",
       header: "Name",
@@ -111,6 +159,70 @@ const PatientList = () => {
         );
       },
     },
+   {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => {
+          const status = row.getValue("status");
+          const patientId = row.original.id;
+          
+          return (
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                "px-2 py-1 rounded-full text-xs",
+                status === "Active" ? "bg-green-100 text-green-800" : 
+                status === "Inactive" ? "bg-yellow-100 text-yellow-800" : 
+                "bg-red-100 text-red-800"
+              )}>
+                {status}
+              </span>
+              
+              <Popover 
+                open={statusUpdateState.open && statusUpdateState.patientId === patientId} 
+                onOpenChange={(open) => setStatusUpdateState({
+                  open,
+                  patientId: open ? patientId : null,
+                  selectedStatus: status,
+                  currentStatus: status
+                })}
+              >
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-2">
+                  <div className="space-y-2">
+                    <Select 
+                      value={statusUpdateState.selectedStatus} 
+                      onValueChange={(value) => setStatusUpdateState(prev => ({
+                        ...prev,
+                        selectedStatus: value
+                      }))}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Inactive">Inactive</SelectItem>
+                        <SelectItem value="Delete">Delete</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      size="sm" 
+                      className="w-full"
+                      onClick={handleStatusUpdate}
+                    >
+                      Update
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+          );
+        },
+      },
 
     {
       id: "actions",
