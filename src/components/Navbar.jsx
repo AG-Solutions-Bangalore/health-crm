@@ -39,6 +39,16 @@ const Navbar = ({
   const { devices, selectedDevice, status, error ,lastFetched} = useSelector((state) => state.device);
 
   useEffect(() => {
+    if (status === 'succeeded') {
+      const selectedExists = devices.find(device => device.macid === selectedDevice?.macid);
+      if (!selectedExists && devices.length > 0) {
+        dispatch(setSelectedDevice(devices[0].macid));
+      }
+    }
+  }, [status, devices, selectedDevice, dispatch]);
+
+  
+  useEffect(() => {
     
     if (!lastFetched || Date.now() - lastFetched > 300000) {
       dispatch(fetchDevices());

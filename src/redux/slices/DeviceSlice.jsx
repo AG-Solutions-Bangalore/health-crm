@@ -22,7 +22,7 @@ const initialState = {
     selectedDevice: null,
     status: 'idle',
     error: null,
-    lastFetched: null // Add timestamp of last fetch
+    lastFetched: null 
 };
 
 const DeviceSlice = createSlice({
@@ -35,7 +35,7 @@ const DeviceSlice = createSlice({
           state.selectedDevice = device;
         }
       },
-      // Add a reducer to manually refresh devices if needed
+      
       refreshDevices: (state) => {
         state.lastFetched = null;
       }

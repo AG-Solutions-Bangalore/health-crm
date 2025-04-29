@@ -1,5 +1,11 @@
-
 import React from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -8,13 +14,6 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,15 +22,16 @@ import axios from "axios";
 import { Loader2, SquarePlus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
-import { useFetchCompanies, useFetchUserType } from "@/hooks/useApi";
+import { useFetchCompanies, useFetchUserType, useFetchDeviceUsers } from "@/hooks/useApi";
 import { toast } from "sonner";
 import { Base_Url } from "@/config/BaseUrl";
+import ReactSelect from 'react-select';
+
 
 const CreateTeam = () => {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
- 
   const { pathname } = useLocation();
   const queryClient = useQueryClient();
   const userId = localStorage.getItem("id");
@@ -43,13 +43,15 @@ const CreateTeam = () => {
     mobile: "",
     user_type: "",
     user_position: "",
+    user_device_ids: []
   });
 
   const { data: companiesData } = useFetchCompanies({
-    enabled: userId === "4",
+    enabled: userId === "5",
   });
 
   const { data: userTypeData } = useFetchUserType();
+  const { data: deviceData } = useFetchDeviceUsers();
 
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
@@ -88,6 +90,14 @@ const CreateTeam = () => {
         [name]: value,
       }));
     }
+  };
+
+  const handleDeviceChange = (selectedOptions) => {
+    const deviceIds = selectedOptions.map(option => option.value);
+    setFormData(prev => ({
+      ...prev,
+      user_device_ids: deviceIds.join(',')
+    }));
   };
 
   const handleSubmit = async () => {
@@ -134,6 +144,7 @@ const CreateTeam = () => {
           mobile: "",
           user_type: "",
           user_position: "",
+          user_device_ids: []
         });
         await queryClient.invalidateQueries(["teams"]);
         setOpen(false);
@@ -146,39 +157,38 @@ const CreateTeam = () => {
       setIsLoading(false);
     }
   };
+
+  // Prepare device options for react-select
+  const deviceOptions = deviceData?.device?.map(device => ({
+    value: device.id.toString(),
+    label: `${device.deviceNameOrId} `
+  })) || [];
+
+    // label: `${device.deviceNameOrId} (${device.deviceMacAddress})`
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {/* <Button variant="default" className="ml-2 bg-yellow-500 text-black hover:bg-yellow-100">
-               <SquarePlus className="h-4 w-4" /> Customer
-             </Button> */}
-
-        {pathname === "/team" || pathname === "/userManagement"? (
+        {pathname === "/team" || pathname === "/userManagement" ? (
           <Button
             variant="default"
-            className={`ml-2 `}
+            className={`ml-2`}
           >
             <SquarePlus className="h-4 w-4" /> Team
           </Button>
-        ) : //  <div>
-        //    <BankCreate
-        //      className={`ml-2 ${ButtonConfig.backgroundColor} ${ButtonConfig.hoverBackgroundColor} ${ButtonConfig.textColor}`}
-        //    ></BankCreate>
-        //  </div>
-        pathname === "/create-contract" ? (
+        ) : pathname === "/create-contract" ? (
           <p className="text-xs text-yellow-700 ml-2 mt-1 w-32 hover:text-red-800 cursor-pointer">
             Create Team
           </p>
         ) : null}
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md w-full">
         <DialogHeader>
           <DialogTitle>Create New Team</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
-          {userId === "4" ? (
+          {userId === "5"  ? (
             <div className="grid gap-2">
               <Label htmlFor="company_id">Company</Label>
               <Select
@@ -275,6 +285,24 @@ const CreateTeam = () => {
               </SelectContent>
             </Select>
           </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="user_device_ids">Devices</Label>
+            <ReactSelect
+              isMulti
+              options={deviceOptions}
+              onChange={handleDeviceChange}
+              placeholder="Select devices"
+              className="react-select-container"
+              classNamePrefix="react-select"
+             
+            />
+            
+            
+          </div>
+
+          
+          
         </div>
 
         <DialogFooter>
@@ -299,3 +327,5 @@ const CreateTeam = () => {
 };
 
 export default CreateTeam;
+
+//sajid
