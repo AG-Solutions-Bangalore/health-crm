@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import {
   Dialog,
@@ -31,6 +30,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ButtonConfig } from "@/config/ButtonConfig";
 import { Base_Url } from "@/config/BaseUrl";
 import { toast } from "sonner";
+import ReactSelect from 'react-select';
+import { useFetchDeviceUsers } from "@/hooks/useApi";
 
 const EditTeam = ({ teamId }) => {
   const [open, setOpen] = useState(false);
@@ -39,12 +40,21 @@ const EditTeam = ({ teamId }) => {
   const [isFetching, setIsFetching] = useState(false);
  
   const queryClient = useQueryClient();
+  const { data: deviceData } = useFetchDeviceUsers();
+  
   const [formData, setFormData] = useState({
     mobile: "",
     email: "",
     name: "",
     status: "Active",
+    user_device_ids: []
   });
+
+  // Prepare device options for react-select
+  const deviceOptions = deviceData?.device?.map(device => ({
+    value: device.id.toString(),
+    label: `${device.deviceNameOrId} (${device.deviceMacAddress})`
+  })) || [];
 
   const fetchTeamData = async () => {
     setIsFetching(true);
@@ -57,12 +67,16 @@ const EditTeam = ({ teamId }) => {
         }
       );
       const teamData = response.data.team;
+      
+      // Convert comma-separated device IDs to array
+      const deviceIds = teamData.user_device_ids ? teamData.user_device_ids.split(',') : [];
+      
       setFormData({
         mobile: teamData.mobile,
         email: teamData.email,
-
         status: teamData.status,
         name: teamData.name,
+        user_device_ids: deviceIds
       });
     } catch (error) {
       toast.error("Failed to fetch team data");
@@ -92,6 +106,14 @@ const EditTeam = ({ teamId }) => {
     }));
   };
 
+  const handleDeviceChange = (selectedOptions) => {
+    const deviceIds = selectedOptions.map(option => option.value);
+    setFormData(prev => ({
+      ...prev,
+      user_device_ids: deviceIds
+    }));
+  };
+
   const handleSubmit = async () => {
     if (!formData.mobile || !formData.email || !formData.status) {
       toast.error("Please fill all fields");
@@ -101,9 +123,14 @@ const EditTeam = ({ teamId }) => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
+      const payload = {
+        ...formData,
+        user_device_ids: formData.user_device_ids.join(',') // Convert array to comma-separated string
+      };
+      
       const response = await axios.put(
         `${Base_Url}/api/panel-update-team/${teamId}`,
-        formData,
+        payload,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -123,13 +150,20 @@ const EditTeam = ({ teamId }) => {
       setIsLoading(false);
     }
   };
+
+  // Get currently selected devices for the select component
+  const selectedDevices = formData.user_device_ids
+    .map(id => {
+      const device = deviceData?.device?.find(d => d.id.toString() === id);
+      return device ? { 
+        value: device.id.toString(), 
+        label: `${device.deviceNameOrId}` 
+      } : null;
+    })
+    .filter(Boolean);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {/* <DialogTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Edit className="h-4 w-4" />
-              </Button>
-            </DialogTrigger> */}
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -149,10 +183,6 @@ const EditTeam = ({ teamId }) => {
                   }`}
                 />
               </Button>
-              {/* <BankEdit
-                   onMouseEnter={() => setIsHovered(true)}
-                   onMouseLeave={() => setIsHovered(false)}
-                 ></BankEdit> */}
             </DialogTrigger>
           </TooltipTrigger>
           <TooltipContent>
@@ -208,6 +238,19 @@ const EditTeam = ({ teamId }) => {
                   <SelectItem value="Inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="user_device_ids">Devices</Label>
+              <ReactSelect
+                isMulti
+                options={deviceOptions}
+                value={selectedDevices}
+                onChange={handleDeviceChange}
+                placeholder="Select devices"
+                className="react-select-container"
+                classNamePrefix="react-select"
+              />
             </div>
           </div>
         )}

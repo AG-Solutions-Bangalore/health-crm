@@ -45,3 +45,9 @@ export const useFetchCompanies = () => {
       createQueryConfig(["usertype"], "/api/panel-fetch-usertypes")
     );
   };
+
+  export const useFetchDeviceUsers = () => {
+    return useQuery(
+      createQueryConfig(["devices"], "/api/panel-fetch-device-user")
+    );
+  };

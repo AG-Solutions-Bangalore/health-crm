@@ -79,7 +79,7 @@ export const Upgrade = ({ isCollapsed }) => {
             )}
           </div>
           <div className="text-xs font-medium text-white/90">
-            Updated: 28/04/2025
+            Updated: 29/04/2025
           </div>
         </motion.div>
       ) : (

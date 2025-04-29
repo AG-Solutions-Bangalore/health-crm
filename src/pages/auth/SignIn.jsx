@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Base_Url } from "@/config/BaseUrl";
 import { ContextPanel } from "@/lib/ContextPanel";
+import { useDispatch } from "react-redux";
+import { fetchDevices } from "@/redux/slices/DeviceSlice";
 
 export default function LoginAuth() {
   const [email, setEmail] = useState("");
@@ -17,6 +19,7 @@ export default function LoginAuth() {
   const [loadingMessage, setLoadingMessage] = useState("");
   const { fetchPagePermission, fetchPermissions } = useContext(ContextPanel);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const loadingMessages = [
     "Authenticating...",
@@ -67,9 +70,13 @@ export default function LoginAuth() {
       localStorage.setItem("companyName", company_detils?.company_name);
       localStorage.setItem("companyEmail", company_detils?.company_email);
       localStorage.setItem("verCon", version?.version_panel);
+      
+      if(UserInfo.token) {
       await fetchPermissions();
       await fetchPagePermission();
+      await dispatch(fetchDevices()).unwrap();
       navigate("/patient");
+    }
     } catch (error) {
       console.error("Login error:", error);
       toast.error(error.response?.data?.message || "Authentication failed");
