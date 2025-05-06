@@ -40,6 +40,7 @@ const CreatePage = () => {
      
       sidebar: [
         { name: "Dashboard", url: "/home" },
+        { name: "Hospital", url: "/hospital" },
         { name: "Device", url: "/device" },
         { name: "Patient", url: "/patient" },
         { name: "Summary", url: "/summary" },

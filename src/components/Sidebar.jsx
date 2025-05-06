@@ -63,6 +63,11 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
       icon: LayoutDashboard,
     },
     {
+      name: "Hospital",
+      path: "/hospital",
+      icon: Cpu,
+    },
+    {
       name: "Device",
       path: "/device",
       icon: Cpu,

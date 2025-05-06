@@ -160,10 +160,32 @@ PatientHistory.page = "Patient";
 // });
 // InvoiceDelete.page = "Invoice";
 
+
+/*---------------------------------Hospital-start------------------- */
+export const HospitalCreate = ({ onClick, className }) => {
+  const navigate = useNavigate();
+  const userId = localStorage.getItem("id") || "";
+  const staticPermissions = getStaticPermissions();
+  if (!checkPermission(userId, "HospitalCreate", staticPermissions)) {
+    return null;
+  }
+
+  return (
+    <Button variant="default" className={className} onClick={onClick}>
+      <SquarePlus className="h-4 w-4" /> Hospital
+    </Button>
+  );
+};
+HospitalCreate.page = "Hospital";
+
+
+/*---------------------------------Hospital-end------------------- */
+
 export default {
     PatientReport,
     PatientHistory,
     DeviceCreate,
+    HospitalCreate,
  
  
 };
