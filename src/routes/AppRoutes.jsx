@@ -19,6 +19,7 @@ import UserTypeList from "@/pages/userType/UserTypeList";
 import EditUserType from "@/pages/userType/EditUserType";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
 import Maintenance from "@/pages/auth/Maintenance";
+import HospitalList from "@/pages/hospital/HospitalList";
 
 function AppRoutes() {
   return (
@@ -40,6 +41,7 @@ function AppRoutes() {
         <Route path="/summary" element={<PatientSummary />} />
 
         {/* device  */}
+        <Route path="/hospital" element={<HospitalList />} />
         <Route path="/device" element={<DeviceList />} />
 
         {/* team list  */}
