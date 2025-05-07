@@ -44,6 +44,7 @@ const CreatePage = () => {
         { name: "Device", url: "/device" },
         { name: "Patient", url: "/patient" },
         { name: "Summary", url: "/summary" },
+        { name: "Hospital Report", url: "/hospital-report" },
         { name: "User Management", url: "/userManagement" },
         { name: "UserType", url: "/user-type" },
       ],

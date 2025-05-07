@@ -12,6 +12,7 @@ import {
 } from "@tanstack/react-table";
 import {
   ChevronDown,
+  Eye,
   Loader2,
   RefreshCw,
   Search,
@@ -48,6 +49,8 @@ import { Base_Url } from "@/config/BaseUrl";
 import { cn } from "@/lib/utils";
 import CreateHospital from "./CreateHospital";
 import EditHospital from "./EditHospital";
+import HospitalToggle from "@/components/statusToggle/HospitalToggle";
+
 
 const HospitalList = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -99,30 +102,48 @@ const HospitalList = () => {
         header: "Creation Date",
         cell: ({ row }) => <div>{row.getValue("hospitalCreationDate")}</div>,
       },
-      {
-        accessorKey: "hospitalStatus",
-        header: "Status",
-        cell: ({ row }) => {
-          const status = row.getValue("hospitalStatus");
+      // {
+      //   accessorKey: "hospitalStatus",
+      //   header: "Status",
+      //   cell: ({ row }) => {
+      //     const status = row.getValue("hospitalStatus");
   
-          return (
-            <div className="flex items-center gap-2">
-              <span
-                className={cn(
-                  "px-2 py-1 rounded-full text-xs",
-                  status === "Active"
-                    ? "bg-green-100 text-green-800"
-                    : status === "Inactive"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-red-100 text-red-800"
-                )}
-              >
-                {status}
-              </span>
-            </div>
-          );
-        },
-      },
+      //     return (
+      //       <div className="flex items-center gap-2">
+      //         <span
+      //           className={cn(
+      //             "px-2 py-1 rounded-full text-xs",
+      //             status === "Active"
+      //               ? "bg-green-100 text-green-800"
+      //               : status === "Inactive"
+      //               ? "bg-yellow-100 text-yellow-800"
+      //               : "bg-red-100 text-red-800"
+      //           )}
+      //         >
+      //           {status}
+      //         </span>
+      //       </div>
+      //     );
+      //   },
+      // },
+      {
+            accessorKey: "hospitalStatus",
+            header: "Status",
+            cell: ({ row }) => {
+              const status = row.getValue("hospitalStatus");
+              const hospitalId = row.original.id;
+      
+              return (
+                <HospitalToggle
+                  initialStatus={status}
+                  hospitalId={hospitalId}
+                  onStatusChange={() => {
+                    refetch();
+                  }}
+                />
+              );
+            },
+          },
       {
         accessorKey: "id",
         header: "Action",
@@ -133,6 +154,22 @@ const HospitalList = () => {
           return (
             <>
             <EditHospital userId={rowId}/>     
+               <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() =>
+                      navigate(`/hospital/assign-device/${rowId}`)
+                    }
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Device Assign List</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             </>
           );
         },

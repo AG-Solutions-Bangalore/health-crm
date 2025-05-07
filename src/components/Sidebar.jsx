@@ -13,7 +13,8 @@ import {
   ClipboardList, 
   Users, 
   UserCog,
-  UserCheck ,
+  UserCheck, 
+  Building,
 } from "lucide-react";
 
 import { Upgrade } from "./upgrade/Upgrade";
@@ -65,7 +66,7 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
     {
       name: "Hospital",
       path: "/hospital",
-      icon: Cpu,
+      icon: Building,
     },
     {
       name: "Device",
@@ -81,6 +82,11 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
       name: "Summary",
       path: "/summary",
       icon: ClipboardList,
+    },
+    {
+      name: "Hospital Report",
+      path: "/hospital-report",
+      icon: Building2,
     },
     {
       name: "User Management",

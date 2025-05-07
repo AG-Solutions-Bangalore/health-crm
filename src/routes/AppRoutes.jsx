@@ -20,6 +20,8 @@ import EditUserType from "@/pages/userType/EditUserType";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
 import Maintenance from "@/pages/auth/Maintenance";
 import HospitalList from "@/pages/hospital/HospitalList";
+import HospitalAssignDeviceList from "@/pages/hospital/hospitalAssignDevice/HospitalAssignDeviceList";
+import HospitalDeviceReport from "@/pages/report/hospitalDeviceReport/HospitalDeviceReport";
 
 function AppRoutes() {
   return (
@@ -39,9 +41,11 @@ function AppRoutes() {
 
         <Route path="/patient/report/:id" element={<ReportView />} />
         <Route path="/summary" element={<PatientSummary />} />
+        <Route path="/hospital-report" element={<HospitalDeviceReport />} />
 
         {/* device  */}
         <Route path="/hospital" element={<HospitalList />} />
+        <Route path="/hospital/assign-device/:id" element={<HospitalAssignDeviceList />} />
         <Route path="/device" element={<DeviceList />} />
 
         {/* team list  */}

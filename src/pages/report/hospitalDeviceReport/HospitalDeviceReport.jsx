@@ -1,18 +1,23 @@
 import Layout from "@/components/Layout";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Printer, RefreshCw, Loader2 } from "lucide-react";
+import { Printer, RefreshCw, Loader2, ChevronDown } from "lucide-react";
 import moment from "moment";
 import { useReactToPrint } from "react-to-print";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { useSelector } from "react-redux";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
 import ExcelJS from "exceljs";
 import { RiFileExcel2Line } from "react-icons/ri";
 import { Base_Url } from "@/config/BaseUrl";
@@ -20,16 +25,22 @@ import { Base_Url } from "@/config/BaseUrl";
 const HospitalDeviceReport = () => {
   const containerRef = useRef();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState({
+    deviceNameOrId: true,
+    deviceMacAddress: true,
+    hospitalDeviceCreatedDate: true,
+    hospitalDeviceStatus: true,
+  });
 
-  // Query to get hospital and device data
+ 
   const {
-    data: hospitalData,
+    data: hospitalsData,
     isLoading,
     isError,
     refetch,
     dataUpdatedAt,
   } = useQuery({
-    queryKey: ["hospitalDeviceReport"],
+    queryKey: ["hospitalDevices"],
     queryFn: async () => {
       const token = localStorage.getItem("token");
       const response = await axios.get(
@@ -42,117 +53,12 @@ const HospitalDeviceReport = () => {
     },
   });
 
-  const downloadExcel = async () => {
-    if (!hospitalData || hospitalData.length === 0) {
-      console.warn("No data available to export");
-      return;
-    }
-  
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Hospital Device Report");
-  
-    const headers = [
-      "Sl No", 
-      "Hospital Name", 
-      "Hospital Area", 
-      "Hospital Address",
-      "Status",
-      "Device Name/ID",
-      "MAC Address",
-      "Device Status",
-      "Created Date"
-    ];
-  
-    // Add headers to worksheet
-    const headerRow = worksheet.addRow(headers);
-    headerRow.eachCell((cell) => {
-      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
-      cell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "6A9AD0" },
-      };
-      cell.alignment = { horizontal: "center" };
-    });
-  
-    // Add data rows
-    let rowIndex = 1;
-    hospitalData.forEach((hospital) => {
-      if (hospital.hospital_device && hospital.hospital_device.length > 0) {
-        hospital.hospital_device.forEach((device) => {
-          const row = worksheet.addRow([
-            rowIndex++,
-            hospital.hospitalName,
-            hospital.hospitalArea,
-            hospital.hospitalAdd,
-            hospital.hospitalStatus,
-            device.deviceNameOrId,
-            device.deviceMacAddress,
-            device.hospitalDeviceStatus,
-            moment(device.hospitalDeviceCreatedDate).format("DD-MMM-YYYY")
-          ]);
-  
-          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-            cell.alignment = { horizontal: 'center' };
-            if (colNumber === 2 || colNumber === 3 || colNumber === 4) { // Hospital info columns
-              cell.alignment = { horizontal: 'left' };
-            }
-          });
-        });
-      } else {
-        // Add row for hospital even if it has no devices
-        const row = worksheet.addRow([
-          rowIndex++,
-          hospital.hospitalName,
-          hospital.hospitalArea,
-          hospital.hospitalAdd,
-          hospital.hospitalStatus,
-          "-",
-          "-",
-          "-",
-          "-"
-        ]);
-  
-        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          cell.alignment = { horizontal: 'center' };
-          if (colNumber === 2 || colNumber === 3 || colNumber === 4) {
-            cell.alignment = { horizontal: 'left' };
-          }
-        });
-      }
-    });
-  
-    // Auto-fit columns
-    worksheet.columns.forEach(column => {
-      let maxLength = 0;
-      column.eachCell({ includeEmpty: true }, cell => {
-        const columnLength = cell.value ? cell.value.toString().length : 0;
-        if (columnLength > maxLength) {
-          maxLength = columnLength;
-        }
-      });
-      column.width = maxLength < 10 ? 10 : maxLength + 2;
-    });
-  
-    // Generate and download Excel file
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `hospital_device_report_${moment().format("DD-MMM-YYYY")}.xlsx`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
   const handlPrintPdf = useReactToPrint({
     content: () => containerRef.current,
     documentTitle: "hospital-device-report",
     pageStyle: `
       @page {
-        size: A4 landscape;
+        size: A4 ;
         margin: 5mm;
       }
       @media print {
@@ -180,6 +86,104 @@ const HospitalDeviceReport = () => {
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  const toggleColumnVisibility = (column) => {
+    setVisibleColumns((prev) => ({
+      ...prev,
+      [column]: !prev[column],
+    }));
+  };
+
+  const downloadExcel = async () => {
+    if (!hospitalsData || hospitalsData.length === 0) {
+      console.warn("No data available to export");
+      return;
+    }
+  
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Hospital Device Report");
+  
+    const headers = [
+      "Hospital Name", 
+      "Hospital Area", 
+      "Device Name/ID", 
+      "MAC Address", 
+      "Created Date", 
+      "Status"
+    ];
+  
+    // Add headers to worksheet
+    const headerRow = worksheet.addRow(headers);
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "6A9AD0" },
+      };
+      cell.alignment = { horizontal: "center" };
+    });
+  
+
+    hospitalsData.forEach((hospital) => {
+      if (hospital.hospital_device && hospital.hospital_device.length > 0) {
+        hospital.hospital_device.forEach((device) => {
+          const row = worksheet.addRow([
+            hospital.hospitalName,
+            hospital.hospitalArea,
+            device.deviceNameOrId,
+            device.deviceMacAddress,
+            device.hospitalDeviceCreatedDate,
+            device.hospitalDeviceStatus,
+          ]);
+  
+          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            if (colNumber <= 2) { 
+              cell.alignment = { horizontal: 'left' };
+            } else if (colNumber >= 3 && colNumber <= 4) { 
+              cell.alignment = { horizontal: 'left' };
+            } else { 
+              cell.alignment = { horizontal: 'center' };
+            }
+          });
+        });
+      } else {
+     
+        const row = worksheet.addRow([
+          hospital.hospitalName,
+          hospital.hospitalArea,
+          "No devices",
+          "-",
+          "-",
+          "-",
+        ]);
+      }
+    });
+  
+  
+    worksheet.columns.forEach(column => {
+      let maxLength = 0;
+      column.eachCell({ includeEmpty: true }, cell => {
+        const columnLength = cell.value ? cell.value.toString().length : 0;
+        if (columnLength > maxLength) {
+          maxLength = columnLength;
+        }
+      });
+      column.width = maxLength < 10 ? 10 : maxLength + 2;
+    });
+  
+   
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `hospital_device_report_${moment().format("DD-MMM-YYYY")}.xlsx`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   if (isLoading) {
@@ -243,8 +247,30 @@ const HospitalDeviceReport = () => {
               </TooltipProvider>
             </div>
             <div className="flex gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="print-hide">
+                    Columns <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {Object.keys(visibleColumns).map((column) => (
+                    <DropdownMenuCheckboxItem
+                      key={column}
+                      className="capitalize"
+                      checked={visibleColumns[column]}
+                      onCheckedChange={() => toggleColumnVisibility(column)}
+                    >
+                      {column === "deviceNameOrId" ? "Device Name/ID" : 
+                       column === "deviceMacAddress" ? "MAC Address" : 
+                       column === "hospitalDeviceCreatedDate" ? "Created Date" : 
+                       column === "hospitalDeviceStatus" ? "Status" : column}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button className="print-hide" onClick={handlPrintPdf}>
-                <Printer className="h-4 w-4" /> Print
+                <Printer className="h-4 w-4 mr-1" /> Print
               </Button>
               <Button className="print-hide" onClick={downloadExcel}>
                 <RiFileExcel2Line className="h-3 w-3 mr-1" /> Excel
@@ -253,59 +279,85 @@ const HospitalDeviceReport = () => {
           </div>
         </div>
 
-        {/* Report Content */}
-        {hospitalData?.map((hospital) => (
-          <div key={hospital.id} className="mb-8">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="text-lg font-semibold">{hospital.hospitalName}</h2>
-              <div className="text-sm text-gray-500">
-                <span className="mr-4">Area: {hospital.hospitalArea}</span>
-                <span>Status: {hospital.hospitalStatus}</span>
+        {/* Hospital and Device Tables */}
+        {hospitalsData && hospitalsData.map((hospital) => (
+          <div key={hospital.id} className="mb-6 border rounded-lg overflow-hidden">
+            {/* Hospital Header */}
+            <div className="bg-gray-50 p-2 border-b">
+              <div className="flex justify-between">
+                <div>
+                  <h2 className="font-semibold text-lg">{hospital.hospitalName}</h2>
+                 
+                </div>
+                <div className=" flex flex-row gap-4 text-sm text-right">
+                <p className="text-sm text-gray-500">Area: {hospital.hospitalArea}</p>
+                  {/* <p>Created: {hospital.hospitalCreationDate}</p> */}
+                  <p className={`font-medium ${hospital.hospitalStatus === "Active" ? "text-green-600" : "text-red-600"}`}>
+                    {hospital.hospitalStatus}
+                  </p>
+                 
+                </div>
               </div>
             </div>
+
+          
             
-            <div className="border rounded-lg overflow-hidden mb-6">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="p-2 text-center border-b">Sl No</th>
+            
+            {/* Devices Table */}
+            <table className="w-full text-sm">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="p-2 text-center border-b">Sl No</th>
+                  {visibleColumns.deviceNameOrId && (
                     <th className="p-2 text-left border-b">Device Name/ID</th>
+                  )}
+                  {visibleColumns.deviceMacAddress && (
                     <th className="p-2 text-left border-b">MAC Address</th>
-                    <th className="p-2 text-center border-b">Status</th>
+                  )}
+                  {visibleColumns.hospitalDeviceCreatedDate && (
                     <th className="p-2 text-center border-b">Created Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {hospital.hospital_device && hospital.hospital_device.length > 0 ? (
-                    hospital.hospital_device.map((device, index) => (
-                      <tr key={device.id} className="hover:bg-gray-50">
-                        <td className="p-2 text-center border-b">{index + 1}</td>
+                  )}
+                  {visibleColumns.hospitalDeviceStatus && (
+                    <th className="p-2 text-center border-b">Status</th>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {hospital.hospital_device && hospital.hospital_device.length > 0 ? (
+                  hospital.hospital_device.map((device, index) => (
+                    <tr key={device.id} className="hover:bg-gray-50">
+                      <td className="p-2 text-center border-b">{index + 1}</td>
+                      {visibleColumns.deviceNameOrId && (
                         <td className="p-2 border-b">{device.deviceNameOrId}</td>
-                        <td className="p-2 border-b">{device.deviceMacAddress}</td>
+                      )}
+                      {visibleColumns.deviceMacAddress && (
+                        <td className="p-2 border-b font-mono text-xs">{device.deviceMacAddress}</td>
+                      )}
+                      {visibleColumns.hospitalDeviceCreatedDate && (
+                        <td className="p-2 text-center border-b">{device.hospitalDeviceCreatedDate}</td>
+                      )}
+                      {visibleColumns.hospitalDeviceStatus && (
                         <td className="p-2 text-center border-b">
                           <span className={`px-2 py-1 rounded-full text-xs ${
-                            device.hospitalDeviceStatus === "Active" 
-                              ? "bg-green-100 text-green-800" 
+                            device.hospitalDeviceStatus === "Active"
+                              ? "bg-green-100 text-green-800"
                               : "bg-red-100 text-red-800"
                           }`}>
                             {device.hospitalDeviceStatus}
                           </span>
                         </td>
-                        <td className="p-2 text-center border-b">
-                          {moment(device.hospitalDeviceCreatedDate).format("DD-MMM-YYYY")}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="5" className="p-4 text-center text-gray-500">
-                        No devices assigned to this hospital
-                      </td>
+                      )}
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="p-3 text-center text-gray-500">
+                      No devices found for this hospital
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         ))}
       </div>
@@ -314,5 +366,3 @@ const HospitalDeviceReport = () => {
 };
 
 export default HospitalDeviceReport;
-
-//sajid 
