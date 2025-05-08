@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Base_Url } from "@/config/Baseurl";
+import { Base_Url } from "@/config/BaseUrl";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");

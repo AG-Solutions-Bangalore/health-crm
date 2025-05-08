@@ -11,9 +11,9 @@ import {
   DialogHeader, 
   DialogTitle 
 } from "@/components/ui/dialog";
-import { Base_Url } from "@/config/Baseurl";
 import { useContext } from "react";
 import { ContextPanel } from "@/lib/ContextPanel";
+import { Base_Url } from "@/config/BaseUrl";
 
 export const Upgrade = ({ isCollapsed }) => {
       const { isPanelUp } = useContext(ContextPanel);

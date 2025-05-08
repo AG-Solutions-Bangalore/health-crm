@@ -100,7 +100,7 @@ export default function LoginAuth() {
         <Card className="border-0 shadow-sm">
           <CardHeader className="text-center space-y-2 pb-4">
             <CardTitle className="text-2xl font-medium text-gray-800">
-              Ag-Solution
+            Qurithealthcare
             </CardTitle>
             <p className="text-sm text-gray-500">
               Health Care Management System

@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import SessionTimeoutTracker from "./components/sessionTimeout/SessionTimeoutTracker";
 import axios from "axios";
 import ValidationWrapper from "./lib/encyrption/ValidationWrapper";
+import DisableInspect from "./components/disableInspect/DisableInspect";
 
 
 
@@ -36,6 +37,7 @@ function App() {
     <>
        <Toaster richColors position="top-right" />
          <SessionTimeoutTracker expiryTime={time} onLogout={handleLogout} />
+         <DisableInspect/>
          <ValidationWrapper>
        <AppRoutes />
        </ValidationWrapper>
