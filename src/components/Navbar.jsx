@@ -138,7 +138,7 @@ const Navbar = ({
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-bold text-yellow-900 leading-tight">
-                Health Care
+              Qurithealthcare
               </span>
             </div>
           </div>

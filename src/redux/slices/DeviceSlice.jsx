@@ -1,4 +1,5 @@
-import { Base_Url } from '@/config/Baseurl';
+
+import { Base_Url } from '@/config/BaseUrl';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
