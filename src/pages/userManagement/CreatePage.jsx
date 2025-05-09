@@ -41,7 +41,8 @@ const CreatePage = () => {
       sidebar: [
         { name: "Dashboard", url: "/home" },
         { name: "Hospital", url: "/hospital" },
-        { name: "Device", url: "/device" },
+        { name: "Device-S", url: "/device" },
+        { name: "Device", url: "/device-user" },
         { name: "Patient", url: "/patient" },
         { name: "Summary", url: "/summary" },
         { name: "Hospital Report", url: "/hospital-report" },

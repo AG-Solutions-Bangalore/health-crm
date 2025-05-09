@@ -99,55 +99,60 @@ const Dashboard = () => {
     }
   };
 
-  // Define columns for the device table
+  // Define columns for the test data table
   const columns = [
     {
-      accessorKey: "deviceNameOrId",
-      header: "Device Name/ID",
+      accessorKey: "patient.firstName",
+      header: "Patient Name",
       cell: ({ row }) => (
-        <div className="font-medium text-slate-800 flex items-center">
-          <Laptop className="h-3 w-3 mr-2 text-slate-400" />
-          {row.getValue("deviceNameOrId")}
+        <div className="font-medium text-slate-800">
+          {row.original.patient?.firstName} {row.original.patient?.lastName}
         </div>
       ),
     },
     {
-      accessorKey: "deviceMacAddress",
+      accessorKey: "deviceID",
+      header: "Device ID",
+      cell: ({ row }) => (
+        <div className="text-slate-600 font-medium text-sm">
+          {row.getValue("deviceID")}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "patient.deviceMacAddress",
       header: "MAC Address",
       cell: ({ row }) => (
         <div className="text-slate-600 font-mono text-xs">
-          {row.getValue("deviceMacAddress")}
+          {row.original.patient?.deviceMacAddress}
         </div>
       ),
     },
- 
     {
-      accessorKey: "patient_count",
-      header: "Patients",
+      accessorKey: "readingType",
+      header: "Test Type",
       cell: ({ row }) => (
-        <Badge variant={row.getValue("patient_count") > 0 ? "default" : "secondary"} className="font-normal">
-          {row.getValue("patient_count")}
+        <Badge variant="outline" className="font-normal">
+          {row.getValue("readingType")}
         </Badge>
       ),
     },
     {
-      accessorKey: "patientTest_count",
-      header: "Tests",
+      accessorKey: "readingTimeUTC",
+      header: "Test Time",
       cell: ({ row }) => (
-        <Badge variant={row.getValue("patientTest_count") > 0 ? "default" : "outline"} className="font-normal bg-blue-50 text-blue-700 hover:bg-blue-100">
-          {row.getValue("patientTest_count")}
-        </Badge>
+        <div className="text-slate-600 text-sm">
+          {new Date(row.getValue("readingTimeUTC")).toLocaleString()}
+        </div>
       ),
     },
-  
   ];
 
   // Create the table instance
   const table = useReactTable({
-    data: dashboardData?.totalDeviceCount || [],
+    data: dashboardData?.lastTestData || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     initialState: {
@@ -156,8 +161,6 @@ const Dashboard = () => {
       },
     },
   });
-
- 
 
   if (isLoading && !isRefreshing) {
     return (
@@ -230,11 +233,10 @@ const Dashboard = () => {
   return (
     <Layout>
       <div className="w-full p-0 md:p-4 space-y-4">
-     
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-1">
           <div>
             <h2 className="text-xl font-semibold text-slate-800">Dashboard Overview</h2>
-            <p className="text-sm text-slate-500">Summary of your medical devices and patient data</p>
+            <p className="text-sm text-slate-500">Summary of medical tests and patient data</p>
           </div>
           
           <div className="flex gap-2 flex-wrap">
@@ -273,7 +275,7 @@ const Dashboard = () => {
             <CardHeader className="py-3 px-4 flex flex-row items-center justify-between bg-gradient-to-r from-blue-50 to-white">
               <CardTitle className="text-sm font-medium text-slate-700 flex items-center">
                 <Laptop className="h-4 w-4 mr-2 text-blue-500" />
-                Total Devices
+                Devices Assigned
               </CardTitle>
               <TooltipProvider>
                 <Tooltip>
@@ -282,7 +284,6 @@ const Dashboard = () => {
                       <ArrowUpRight className="h-3 w-3" />
                     </div>
                   </TooltipTrigger>
-                 
                 </Tooltip>
               </TooltipProvider>
             </CardHeader>
@@ -315,7 +316,6 @@ const Dashboard = () => {
                       <ArrowUpRight className="h-3 w-3" />
                     </div>
                   </TooltipTrigger>
-                 
                 </Tooltip>
               </TooltipProvider>
             </CardHeader>
@@ -334,7 +334,7 @@ const Dashboard = () => {
             </CardFooter>
           </Card>
 
-        
+          {/* Tests Card */}
           <Card className="overflow-hidden shadow-sm border-t-2 border-t-emerald-500 hover:shadow-md transition-all">
             <CardHeader className="py-3 px-4 flex flex-row items-center justify-between bg-gradient-to-r from-emerald-50 to-white">
               <CardTitle className="text-sm font-medium text-slate-700 flex items-center">
@@ -348,7 +348,6 @@ const Dashboard = () => {
                       <ArrowUpRight className="h-3 w-3" />
                     </div>
                   </TooltipTrigger>
-                 
                 </Tooltip>
               </TooltipProvider>
             </CardHeader>
@@ -368,15 +367,14 @@ const Dashboard = () => {
           </Card>
         </div>
 
-      
+        {/* Recent Tests Table */}
         <Card className="shadow-sm">
           <CardHeader className="py-3 px-4 border-b bg-slate-50">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-slate-700 flex items-center">
-                <Laptop className="h-4 w-4 mr-2 text-slate-500" />
-                Device Statistics
+                <Activity className="h-4 w-4 mr-2 text-slate-500" />
+                Recent Tests (Last 5)
               </CardTitle>
-             
             </div>
           </CardHeader>
           <CardContent className="p-2">
@@ -384,7 +382,7 @@ const Dashboard = () => {
               <div className="relative w-full md:w-64">
                 <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-slate-400" />
                 <Input
-                  placeholder="Search devices..."
+                  placeholder="Search tests..."
                   value={table.getState().globalFilter || ""}
                   onChange={(event) => table.setGlobalFilter(event.target.value)}
                   className="pl-8 h-9 text-sm"
@@ -392,11 +390,10 @@ const Dashboard = () => {
               </div>
               
               <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
-               
-                
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 text-sm bg-white flex-shrink-0">Columns <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                    <Button variant="outline" size="sm" className="h-9 text-sm bg-white flex-shrink-0">
+                      Columns <ChevronDown className="ml-1 h-3.5 w-3.5" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="text-sm">
@@ -456,7 +453,7 @@ const Dashboard = () => {
                   {isRefreshing ? (
                     Array(5).fill(0).map((_, index) => (
                       <TableRow key={index} className="h-11">
-                        {Array(6).fill(0).map((_, cellIndex) => (
+                        {Array(5).fill(0).map((_, cellIndex) => (
                           <TableCell key={cellIndex} className="py-2">
                             <Skeleton className="h-4 w-full" />
                           </TableCell>
@@ -490,102 +487,13 @@ const Dashboard = () => {
                           <div className="rounded-full bg-slate-50 p-3 mb-2">
                             <Search className="h-5 w-5 text-slate-300" />
                           </div>
-                          No devices matching your filters were found.
-                          <Button variant="link" size="sm" onClick={() => table.setGlobalFilter("")}>
-                            Clear search
-                          </Button>
+                          No test data available
                         </div>
                       </TableCell>
                     </TableRow>
                   )}
                 </TableBody>
               </Table>
-            </div>
-            
-            <div className="flex flex-col md:flex-row items-center justify-between py-3 gap-3">
-              <div className="flex items-center text-xs text-slate-500">
-                Showing page {table.getState().pagination.pageIndex + 1} of{" "}
-                {table.getPageCount()} ({dashboardData?.totalDeviceCount?.length || 0} total devices)
-              </div>
-              
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => table.setPageIndex(0)}
-                  disabled={!table.getCanPreviousPage()}
-                  className="h-8 w-8 p-0 text-sm bg-white"
-                >
-                  <span className="sr-only">Go to first page</span>
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                  <ChevronLeft className="h-3.5 w-3.5 -ml-2" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => table.previousPage()}
-                  disabled={!table.getCanPreviousPage()}
-                  className="h-8 text-sm bg-white"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5 mr-1" />
-                  Previous
-                </Button>
-                <div className="flex items-center text-xs">
-                  {Array.from({ length: Math.min(5, Math.max(table.getPageCount(), 1)) }, (_, i) => {
-                    const pageIndex = i;
-                    const isCurrentPage = pageIndex === table.getState().pagination.pageIndex;
-                    
-                    return (
-                      <Button
-                        key={i}
-                        variant={isCurrentPage ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => table.setPageIndex(pageIndex)}
-                        className={`h-8 w-8 p-0 ${isCurrentPage ? "bg-blue-600" : "bg-white"}`}
-                      >
-                        {pageIndex + 1}
-                      </Button>
-                    );
-                  })}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => table.nextPage()}
-                  disabled={!table.getCanNextPage()}
-                  className="h-8 text-sm bg-white"
-                >
-                  Next
-                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                  disabled={!table.getCanNextPage()}
-                  className="h-8 w-8 p-0 text-sm bg-white"
-                >
-                  <span className="sr-only">Go to last page</span>
-                  <ChevronRight className="h-3.5 w-3.5" />
-                  <ChevronRight className="h-3.5 w-3.5 -ml-2" />
-                </Button>
-              </div>
-              
-              <Select
-                value={table.getState().pagination.pageSize.toString()}
-                onValueChange={(value) => table.setPageSize(Number(value))}
-              >
-                <SelectTrigger className="h-8 text-xs w-24 bg-white">
-                  <SelectValue placeholder="Show" />
-                </SelectTrigger>
-                <SelectContent>
-                  {[5, 10, 20, 30, 50].map((pageSize) => (
-                    <SelectItem key={pageSize} value={pageSize.toString()}>
-                      Show {pageSize}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </CardContent>
         </Card>

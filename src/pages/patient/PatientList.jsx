@@ -89,7 +89,8 @@ const [statusUpdateState, setStatusUpdateState] = useState({
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      return response.data.patient.reverse();
+      return response.data.patient;
+      // return response.data.patient.reverse();
     },
     enabled: !!deviceId,
   });

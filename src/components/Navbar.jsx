@@ -8,7 +8,7 @@ import {
   FaChevronLeft,
   FaUserCircle,
 } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Select,
@@ -34,6 +34,7 @@ const Navbar = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
 
   const { devices, selectedDevice, status, error ,lastFetched} = useSelector((state) => state.device);
@@ -99,6 +100,8 @@ const Navbar = ({
     toast.success(`Device ${devices.find(d => d.macid === macid)?.deviceid} selected`);
   };
 
+  const shouldShowDeviceSelect = ["/patient", "/summary"].includes(location.pathname);
+
   return (
     <nav className="bg-white border-b border-gray-200 fixed w-full top-0 z-50">
       <div className="px-4 h-16 flex items-center justify-between">
@@ -163,42 +166,44 @@ const Navbar = ({
         </div>
         <div className="flex items-center gap-2">
           <div className="hidden lg:flex items-center gap-2">
-            {status === 'loading' ? (
-              <div className="w-[180px] h-10 flex items-center justify-center relative">
-                <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-blue-500 transition-all duration-300 ease-out"
-                    style={{ width: `${loadingProgress}%` }}
-                  ></div>
-                </div>
-                <span className="absolute text-xs text-blue-600">
-                  {loadingProgress}%
-                </span>
-              </div>
-            ) : (
-              <Select
-                value={selectedDevice?.macid || ""}
-                onValueChange={handleDeviceChange}
-                disabled={status !== 'succeeded'}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue 
-                    placeholder={
-                      status === 'failed' ? "Error loading devices" : 
-                      devices.length === 0 ? "No devices" :
-                      selectedDevice ? selectedDevice.deviceid : "Select a device"
-                    } 
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {devices.map((device) => (
-                    <SelectItem key={device.macid} value={device.macid}>
-                      {device.deviceid}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            {shouldShowDeviceSelect && (
+                         status === 'loading' ? (
+                           <div className="w-[180px] h-10 flex items-center justify-center relative">
+                             <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
+                               <div 
+                                 className="h-full bg-blue-500 transition-all duration-300 ease-out"
+                                 style={{ width: `${loadingProgress}%` }}
+                               ></div>
+                             </div>
+                             <span className="absolute text-xs text-blue-600">
+                               {loadingProgress}%
+                             </span>
+                           </div>
+                         ) : (
+                           <Select
+                             value={selectedDevice?.macid || ""}
+                             onValueChange={handleDeviceChange}
+                             disabled={status !== 'succeeded'}
+                           >
+                             <SelectTrigger className="w-[180px]">
+                               <SelectValue 
+                                 placeholder={
+                                   status === 'failed' ? "Error loading devices" : 
+                                   devices.length === 0 ? "No devices" :
+                                   selectedDevice ? selectedDevice.deviceid : "Select a device"
+                                 } 
+                               />
+                             </SelectTrigger>
+                             <SelectContent>
+                               {devices.map((device) => (
+                                 <SelectItem key={device.macid} value={device.macid}>
+                                   {device.deviceid}
+                                 </SelectItem>
+                               ))}
+                             </SelectContent>
+                           </Select>
+                         )
+                       )}
 
 <TooltipProvider>
             <Tooltip>
@@ -231,58 +236,60 @@ const Navbar = ({
               <FaUserCircle className="text-blue-700" size={20} />
             </button>
 
-            {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 p-2 flex flex-col items-center gap-4 bg-white border border-gray-200 rounded-lg shadow-lg">
-                {status === 'loading' ? (
-                  <div className="w-[180px] h-10 flex items-center justify-center relative">
-                    <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-blue-500 transition-all duration-300 ease-out"
-                        style={{ width: `${loadingProgress}%` }}
-                      ></div>
-                    </div>
-                    <span className="absolute text-xs text-blue-600">
-                      {loadingProgress}%
-                    </span>
-                  </div>
-                ) : (
-                  <Select
-                    value={selectedDevice?.macid || ""}
-                    onValueChange={(value) => {
-                      handleDeviceChange(value);
-                      setIsDropdownOpen(false);
-                    }}
-                    disabled={status !== 'succeeded'}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue 
-                        placeholder={
-                          status === 'failed' ? "Error" : 
-                          devices.length === 0 ? "No devices" :
-                          selectedDevice ? selectedDevice.deviceid : "Select device"
-                        } 
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {devices.map((device) => (
-                        <SelectItem key={device.macid} value={device.macid}>
-                          {device.deviceid}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                <Button
-                  onClick={() => {
-                    setIsDropdownOpen(false);
-                    setIsLogoutDialogOpen(true);
-                  }}
-                  className="w-full   px-4 py-2 text-sm hover:bg-gray-100 text-left"
-                >
-                  Logout
-                </Button>
-              </div>
-            )}
+           {isDropdownOpen && (
+                         <div className="absolute right-0 mt-2 p-2 flex flex-col items-center gap-4 bg-white border border-gray-200 rounded-lg shadow-lg">
+                           {shouldShowDeviceSelect && (
+                             status === 'loading' ? (
+                               <div className="w-[180px] h-10 flex items-center justify-center relative">
+                                 <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
+                                   <div 
+                                     className="h-full bg-blue-500 transition-all duration-300 ease-out"
+                                     style={{ width: `${loadingProgress}%` }}
+                                   ></div>
+                                 </div>
+                                 <span className="absolute text-xs text-blue-600">
+                                   {loadingProgress}%
+                                 </span>
+                               </div>
+                             ) : (
+                               <Select
+                                 value={selectedDevice?.macid || ""}
+                                 onValueChange={(value) => {
+                                   handleDeviceChange(value);
+                                   setIsDropdownOpen(false);
+                                 }}
+                                 disabled={status !== 'succeeded'}
+                               >
+                                 <SelectTrigger className="w-[180px]">
+                                   <SelectValue 
+                                     placeholder={
+                                       status === 'failed' ? "Error" : 
+                                       devices.length === 0 ? "No devices" :
+                                       selectedDevice ? selectedDevice.deviceid : "Select device"
+                                     } 
+                                   />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                   {devices.map((device) => (
+                                     <SelectItem key={device.macid} value={device.macid}>
+                                       {device.deviceid}
+                                     </SelectItem>
+                                   ))}
+                                 </SelectContent>
+                               </Select>
+                             )
+                           )}
+                           <Button
+                             onClick={() => {
+                               setIsDropdownOpen(false);
+                               setIsLogoutDialogOpen(true);
+                             }}
+                             className="w-full px-4 py-2 text-sm hover:bg-gray-100 text-left"
+                           >
+                             Logout
+                           </Button>
+                         </div>
+                       )}
           </div>
           <div className="hidden lg:flex items-center gap-2">
             <Button 
