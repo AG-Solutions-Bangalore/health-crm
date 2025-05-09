@@ -32,7 +32,7 @@ const HospitalToggle = ({ initialStatus, hospitalId, onStatusChange }) => {
         onStatusChange(newStatus);
       }
 
-      toast.success(`Team status changed to ${newStatus}`);
+      toast.success(`Hospital status changed to ${newStatus}`);
     } catch (error) {
       toast.error("Failed to update status. Please try again.");
     } finally {

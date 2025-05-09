@@ -70,6 +70,11 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
     },
     {
       name: "Device",
+      path: "/device-user",
+      icon: Building,
+    },
+    {
+      name: "Device-S",
       path: "/device",
       icon: Cpu,
     },

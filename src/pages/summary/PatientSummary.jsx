@@ -75,7 +75,9 @@ const PatientSummary = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      return response.data.patient.reverse();
+      return response.data.patient.filter((p) => p.status === "Active");
+
+      // return response.data.patient.reverse();
     },
     enabled: !!deviceId,
   });
