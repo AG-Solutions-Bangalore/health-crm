@@ -52,14 +52,16 @@ const DeviceSlice = createSlice({
           state.devices = action.payload.map(device => ({
             name: device.deviceNameOrId,
             deviceid: device.deviceNameOrId,
-            macid: device.deviceMacAddress
+            macid: device.deviceMacAddress,
+             lastSync: device.devicelatestdate
           }));
           
           if (!state.selectedDevice && action.payload.length > 0) {
             state.selectedDevice = {
               name: action.payload[0].deviceNameOrId,
               deviceid: action.payload[0].deviceNameOrId,
-              macid: action.payload[0].deviceMacAddress
+              macid: action.payload[0].deviceMacAddress,
+               lastSync: action.payload[0].devicelatestdate
             };
           }
         })

@@ -22,6 +22,31 @@ import { useDispatch, useSelector } from "react-redux";
 import { setSelectedDevice, fetchDevices } from "@/redux/slices/DeviceSlice";
 import Logout from "./logOut/Logout";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+const getNavbarColors = (userPosition) => {
+  switch(userPosition) {
+    case "Hospital":
+      return {
+        
+        buttonBg: "bg-blue-700",
+        buttonHover: "hover:bg-blue-800",
+      
+      };
+    case "Doctor":
+      return {
+      
+        buttonBg: "bg-green-700",
+        buttonHover: "hover:bg-green-800",
+       
+      };
+    default:
+      return {
+       
+        buttonBg: "bg-black",
+        buttonHover: "hover:bg-gray-800",
+       
+      };
+  }
+};
 
 const Navbar = ({
   toggleSidebar,
@@ -32,11 +57,12 @@ const Navbar = ({
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const userPosition = localStorage.getItem("user_position");
   const [loadingProgress, setLoadingProgress] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-
+const colors = getNavbarColors(userPosition);
   const { devices, selectedDevice, status, error ,lastFetched} = useSelector((state) => state.device);
 
   useEffect(() => {
@@ -284,7 +310,7 @@ const Navbar = ({
                                setIsDropdownOpen(false);
                                setIsLogoutDialogOpen(true);
                              }}
-                             className="w-full px-4 py-2 text-sm hover:bg-gray-100 text-left"
+                             className={`w-full px-4 py-2 text-sm ${colors.buttonBg} ${colors.buttonHover} text-left`}
                            >
                              Logout
                            </Button>
@@ -295,6 +321,7 @@ const Navbar = ({
             <Button 
               onClick={() => setIsLogoutDialogOpen(true)}
               variant="default"
+              className={`${colors.buttonBg} ${colors.buttonHover} text-white`}
             >
               Logout
             </Button>

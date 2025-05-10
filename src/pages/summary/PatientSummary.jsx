@@ -22,6 +22,7 @@ import {
 import ExcelJS from "exceljs";
 import { RiFileExcel2Line } from "react-icons/ri";
 import { Base_Url } from "@/config/BaseUrl";
+import { getNavbarColors } from "@/components/buttonColors/ButtonColors";
 
 const readingTypeMappings = {
   Pressure: ["BPSITL"],
@@ -50,7 +51,9 @@ const PatientSummary = () => {
   const { selectedDevice } = useSelector((state) => state.device);
   const deviceId = selectedDevice?.macid;
   const containerRef = useRef();
+  const userPosition = localStorage.getItem("user_position");
   const [isRefreshing, setIsRefreshing] = useState(false);
+    const colors = getNavbarColors(userPosition);
   const [visibleColumns, setVisibleColumns] = useState(
     Object.keys(readingTypeMappings).reduce((acc, column) => {
       acc[column] = true;
@@ -314,10 +317,16 @@ const PatientSummary = () => {
           <h1 className="text-xl font-bold">Patients Summary</h1>
           <div className="print:hidden flex items-center gap-4">
             <div className=" flex items-center text-xs text-gray-500 bg-gray-50 rounded-full px-3 py-0.5">
-              <span>
-                Last updated: {new Date(dataUpdatedAt).toLocaleTimeString()}
-              </span>
-              <TooltipProvider>
+             <span>
+                                   Last Sync:{" "}
+                                   {selectedDevice?.lastSync
+                                     ? moment(
+                                         selectedDevice.lastSync,
+                                         "YYYY-MM-DD HH:mm:ss"
+                                       ).format("DD-MM-YYYY HH:mm:ss")
+                                     : "-"}
+                                 </span>
+              {/* <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -338,7 +347,7 @@ const PatientSummary = () => {
                     <p>Refresh data</p>
                   </TooltipContent>
                 </Tooltip>
-              </TooltipProvider>
+              </TooltipProvider> */}
             </div>
             <div className="flex gap-2">
               <DropdownMenu>
@@ -360,10 +369,10 @@ const PatientSummary = () => {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button className="print-hide" onClick={handlPrintPdf}>
+              <Button className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide`}  onClick={handlPrintPdf}>
                 <Printer className="h-4 w-4" /> Print
               </Button>
-              <Button className="print-hide" onClick={downloadExcel}>
+              <Button    className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide`} onClick={downloadExcel}>
                 <RiFileExcel2Line className="h-3 w-3 mr-1" /> Excel
               </Button>
             </div>

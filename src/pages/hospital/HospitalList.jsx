@@ -74,6 +74,7 @@ const HospitalList = () => {
         return response?.data?.hospital;
       },
     });
+  
     const [sorting, setSorting] = useState([]);
     const [columnFilters, setColumnFilters] = useState([]);
     const [columnVisibility, setColumnVisibility] = useState({});
@@ -87,15 +88,21 @@ const HospitalList = () => {
         header: "Hospital Name",
         cell: ({ row }) => <div>{row.getValue("hospitalName")}</div>,
       },
+    
+      {
+        accessorKey: "hospitalMobile",
+        header: "Mobile",
+        cell: ({ row }) => <div>{row.getValue("hospitalMobile")}</div>,
+      },
+      {
+        accessorKey: "hospitalEmail",
+        header: "Email",
+        cell: ({ row }) => <div>{row.getValue("hospitalEmail")}</div>,
+      },
       {
         accessorKey: "hospitalArea",
         header: "Area",
         cell: ({ row }) => <div>{row.getValue("hospitalArea")}</div>,
-      },
-      {
-        accessorKey: "hospitalAdd",
-        header: "Address",
-        cell: ({ row }) => <div>{row.getValue("hospitalAdd")}</div>,
       },
       {
         accessorKey: "hospitalCreationDate",

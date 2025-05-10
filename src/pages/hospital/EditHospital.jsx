@@ -1,14 +1,14 @@
 import { Base_Url } from "@/config/BaseUrl";
 import React, { useEffect } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogTrigger,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+  SheetTrigger,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -37,6 +37,10 @@ const EditHospital = ({ userId }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
+  const [errors, setErrors] = useState({
+    hospitalMobile: "",
+    hospitalEmail: ""
+  });
 
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
@@ -44,7 +48,19 @@ const EditHospital = ({ userId }) => {
     hospitalArea: "",
     hospitalAdd: "",
     hospitalStatus: "",
+    hospitalMobile: "",
+    hospitalEmail: ""
   });
+
+  const validateMobile = (mobile) => {
+    const regex = /^[0-9]{10}$/;
+    return regex.test(mobile);
+  };
+
+  const validateEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
 
   const fetchHospitalData = async () => {
     setIsFetching(true);
@@ -62,6 +78,8 @@ const EditHospital = ({ userId }) => {
         hospitalArea: hospitalData.hospitalArea,
         hospitalAdd: hospitalData.hospitalAdd,
         hospitalStatus: hospitalData.hospitalStatus,
+        hospitalMobile: hospitalData.hospitalMobile || "",
+        hospitalEmail: hospitalData.hospitalEmail || ""
       });
     } catch (error) {
       toast.error("Failed to fetch hospital data");
@@ -78,6 +96,25 @@ const EditHospital = ({ userId }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    // Validate mobile number
+    if (name === "hospitalMobile") {
+      if (value && !validateMobile(value)) {
+        setErrors(prev => ({...prev, hospitalMobile: "Mobile number must be 10 digits"}));
+      } else {
+        setErrors(prev => ({...prev, hospitalMobile: ""}));
+      }
+    }
+
+    // Validate email
+    if (name === "hospitalEmail") {
+      if (value && !validateEmail(value)) {
+        setErrors(prev => ({...prev, hospitalEmail: "Please enter a valid email"}));
+      } else {
+        setErrors(prev => ({...prev, hospitalEmail: ""}));
+      }
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -96,9 +133,23 @@ const EditHospital = ({ userId }) => {
       !formData.hospitalName ||
       !formData.hospitalArea ||
       !formData.hospitalAdd ||
-      !formData.hospitalStatus
+      !formData.hospitalStatus ||
+      !formData.hospitalMobile ||
+      !formData.hospitalEmail
     ) {
       toast.error("Please fill all fields");
+      return;
+    }
+
+    // Validate mobile
+    if (!validateMobile(formData.hospitalMobile)) {
+      toast.error("Mobile number must be 10 digits");
+      return;
+    }
+
+    // Validate email
+    if (!validateEmail(formData.hospitalEmail)) {
+      toast.error("Please enter a valid email");
       return;
     }
 
@@ -115,7 +166,7 @@ const EditHospital = ({ userId }) => {
 
       if (response?.data.code == 200) {
         toast.success(response.data.msg);
-
+        setOpen(false);
         await queryClient.invalidateQueries(["hospital"]);
       } else {
         toast.error(response.data.msg);
@@ -126,12 +177,13 @@ const EditHospital = ({ userId }) => {
       setIsLoading(false);
     }
   };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Sheet open={open} onOpenChange={setOpen}>
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <DialogTrigger asChild>
+            <SheetTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
@@ -147,24 +199,23 @@ const EditHospital = ({ userId }) => {
                   }`}
                 />
               </Button>
-            </DialogTrigger>
+            </SheetTrigger>
           </TooltipTrigger>
           <TooltipContent>
             <p>Edit Hospital</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Edit Hospital</DialogTitle>
-          <DialogDescription>
+      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Edit Hospital</SheetTitle>
+          <SheetDescription>
             Update hospital information below
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
         <div className="grid gap-4 py-4">
-          
           <div className="grid gap-2">
-            <Label htmlFor="hospitalName">Hospital</Label>
+            <Label htmlFor="hospitalName">Hospital Name</Label>
             <Input
               id="hospitalName"
               name="hospitalName"
@@ -173,33 +224,67 @@ const EditHospital = ({ userId }) => {
               placeholder="Enter hospital name"
             />
           </div>
-         <div className="grid grid-cols-1 md:grid-cols-2  gap-2">
-         <div className="grid gap-2">
-            <Label htmlFor="hospitalArea">Area</Label>
-            <Input
-              id="hospitalArea"
-              name="hospitalArea"
-              value={formData.hospitalArea}
-              onChange={handleInputChange}
-              placeholder="Enter hospital area"
-            />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="grid gap-2">
+              <Label htmlFor="hospitalArea">Area</Label>
+              <Input
+                id="hospitalArea"
+                name="hospitalArea"
+                value={formData.hospitalArea}
+                onChange={handleInputChange}
+                placeholder="Enter hospital area"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="hospitalStatus">Status</Label>
+              <Select
+                value={formData.hospitalStatus}
+                onValueChange={handleStatusChange}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="hospitalStatus">Status</Label>
-            <Select
-              value={formData.hospitalStatus}
-              onValueChange={handleStatusChange}
-            >
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="grid gap-2">
+              <Label htmlFor="hospitalMobile">Mobile Number</Label>
+              <Input
+                type="tel"
+                id="hospitalMobile"
+                name="hospitalMobile"
+                value={formData.hospitalMobile}
+                onChange={handleInputChange}
+                placeholder="Enter 10-digit mobile number"
+                maxLength={10}
+              />
+              {errors.hospitalMobile && (
+                <p className="text-sm text-red-500">{errors.hospitalMobile}</p>
+              )}
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="hospitalEmail">Email</Label>
+              <Input
+                type="email"
+                id="hospitalEmail"
+                name="hospitalEmail"
+                value={formData.hospitalEmail}
+                onChange={handleInputChange}
+                placeholder="Enter hospital email"
+              />
+              {errors.hospitalEmail && (
+                <p className="text-sm text-red-500">{errors.hospitalEmail}</p>
+              )}
+            </div>
           </div>
-         </div>
+
           <div className="grid gap-2">
             <Label htmlFor="hospitalAdd">Address</Label>
             <Textarea
@@ -211,11 +296,12 @@ const EditHospital = ({ userId }) => {
             />
           </div>
         </div>
-        <DialogFooter>
+        <SheetFooter>
           <Button
             type="submit"
             onClick={handleSubmit}
             disabled={isLoading || isFetching}
+            className="mt-4"
           >
             {isLoading ? (
               <>
@@ -226,9 +312,9 @@ const EditHospital = ({ userId }) => {
               "Update Hospital"
             )}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 };
 

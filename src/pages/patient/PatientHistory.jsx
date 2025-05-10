@@ -50,13 +50,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Base_Url } from "@/config/BaseUrl";
+import { getNavbarColors } from "@/components/buttonColors/ButtonColors";
 
 const PatientHistory = () => {
   const { id } = useParams();
   const location = useLocation();
   const { firstName, lastName } = location.state || {};
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const userPosition = localStorage.getItem("user_position");
   
+      const colors = getNavbarColors(userPosition);
   const {
     data: responseData,
     isLoading,
@@ -149,6 +152,7 @@ const PatientHistory = () => {
             <Button
               variant="outline"
               size="sm"
+                 className={`${colors.buttonBg} ${colors.buttonHover} text-white `}
               onClick={() => {
                 const byteCharacters = atob(reading.e_c_g_parameters[0].pdfData);
                 const byteNumbers = new Array(byteCharacters.length);
@@ -269,7 +273,7 @@ const PatientHistory = () => {
           <h1 className="text-2xl text-gray-800">
             Patient History of {firstName} {lastName}
           </h1>
-          <div className="flex items-center space-x-2">
+          {/* <div className="flex items-center space-x-2">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -295,7 +299,7 @@ const PatientHistory = () => {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </div>
+          </div> */}
         </div>
 
         {/* searching and column filter  */}

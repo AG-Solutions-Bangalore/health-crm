@@ -7,13 +7,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,15 +22,16 @@ import axios from "axios";
 import { Loader2, SquarePlus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
-import { useFetchCompanies, useFetchUserType, useFetchDeviceUsers } from "@/hooks/useApi";
+import { useFetchCompanies, useFetchUserType, useFetchHospitals } from "@/hooks/useApi";
 import { toast } from "sonner";
 import { Base_Url } from "@/config/BaseUrl";
 import ReactSelect from 'react-select';
 
-
 const CreateTeam = () => {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingDevices, setIsFetchingDevices] = useState(false);
+  const [deviceOptions, setDeviceOptions] = useState([]);
 
   const { pathname } = useLocation();
   const queryClient = useQueryClient();
@@ -43,6 +44,7 @@ const CreateTeam = () => {
     mobile: "",
     user_type: "",
     user_position: "",
+    user_hospital_ids: "",
     user_device_ids: []
   });
 
@@ -51,7 +53,31 @@ const CreateTeam = () => {
   });
 
   const { data: userTypeData } = useFetchUserType();
-  const { data: deviceData } = useFetchDeviceUsers();
+  const { data: hospitalsData } = useFetchHospitals();
+
+  const fetchDevicesByHospital = async (hospitalId) => {
+    if (!hospitalId) return;
+    setIsFetchingDevices(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `${Base_Url}/api/panel-fetch-device-user/${hospitalId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const devices = response.data.device || [];
+      const options = devices.map(device => ({
+        value: device.id.toString(),
+        label: `${device.deviceNameOrId}`
+      }));
+      setDeviceOptions(options);
+    } catch (error) {
+      toast.error("Failed to fetch devices");
+    } finally {
+      setIsFetchingDevices(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
@@ -84,6 +110,13 @@ const CreateTeam = () => {
           ? selectedPosition.user_type.toString()
           : "",
       }));
+    } else if (name === "user_hospital_ids") {
+      setFormData(prev => ({
+        ...prev,
+        user_hospital_ids: value,
+        user_device_ids: [] // Clear devices when hospital changes
+      }));
+      fetchDevicesByHospital(value);
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -96,7 +129,7 @@ const CreateTeam = () => {
     const deviceIds = selectedOptions.map(option => option.value);
     setFormData(prev => ({
       ...prev,
-      user_device_ids: deviceIds.join(',')
+      user_device_ids: deviceIds
     }));
   };
 
@@ -108,7 +141,8 @@ const CreateTeam = () => {
       !formData.email ||
       !formData.mobile ||
       !formData.user_type ||
-      !formData.user_position
+      !formData.user_position ||
+      !formData.user_hospital_ids
     ) {
       toast.error("Please fill all fields");
       return;
@@ -128,7 +162,10 @@ const CreateTeam = () => {
    
       const response = await axios.post(
         `${Base_Url}/api/panel-create-team`,
-        formData,
+        {
+          ...formData,
+          user_device_ids: formData.user_device_ids.join(',')
+        },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -144,6 +181,7 @@ const CreateTeam = () => {
           mobile: "",
           user_type: "",
           user_position: "",
+          user_hospital_ids: "",
           user_device_ids: []
         });
         await queryClient.invalidateQueries(["teams"]);
@@ -158,16 +196,9 @@ const CreateTeam = () => {
     }
   };
 
-  // Prepare device options for react-select
-  const deviceOptions = deviceData?.device?.map(device => ({
-    value: device.id.toString(),
-    label: `${device.deviceNameOrId} `
-  })) || [];
-
-    // label: `${device.deviceNameOrId} (${device.deviceMacAddress})`
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
         {pathname === "/team" || pathname === "/userManagement" ? (
           <Button
             variant="default"
@@ -180,15 +211,15 @@ const CreateTeam = () => {
             Create Team
           </p>
         ) : null}
-      </DialogTrigger>
+      </SheetTrigger>
 
-      <DialogContent className="sm:max-w-md w-full">
-        <DialogHeader>
-          <DialogTitle>Create New Team</DialogTitle>
-        </DialogHeader>
+      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Create New Team</SheetTitle>
+        </SheetHeader>
 
         <div className="grid gap-4 py-4">
-          {userId === "5"  ? (
+          {userId === "5" ? (
             <div className="grid gap-2">
               <Label htmlFor="company_id">Company</Label>
               <Select
@@ -221,7 +252,24 @@ const CreateTeam = () => {
               />
             </div>
           )}
-
+ <div className="grid gap-2">
+            <Label htmlFor="user_hospital_ids">Hospital</Label>
+            <Select
+              onValueChange={(value) => handleSelectChange(value, "user_hospital_ids")}
+              value={formData.user_hospital_ids}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select hospital" />
+              </SelectTrigger>
+              <SelectContent>
+                {hospitalsData?.hospital?.map((hospital) => (
+                  <SelectItem key={hospital.id} value={hospital.id.toString()}>
+                    {hospital.hospitalName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid gap-2">
             <Label htmlFor="name">Name</Label>
             <Input
@@ -286,30 +334,36 @@ const CreateTeam = () => {
             </Select>
           </div>
 
+         
+
           <div className="grid gap-2">
             <Label htmlFor="user_device_ids">Devices</Label>
-            <ReactSelect
-              isMulti
-              options={deviceOptions}
-              onChange={handleDeviceChange}
-              placeholder="Select devices"
-              className="react-select-container"
-              classNamePrefix="react-select"
-             
-            />
-            
-            
+            {isFetchingDevices ? (
+              <div className="flex items-center justify-center h-10">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
+            ) : (
+              <ReactSelect
+                isMulti
+                options={deviceOptions}
+                value={deviceOptions.filter(option => 
+                  formData.user_device_ids.includes(option.value)
+                )}
+                onChange={handleDeviceChange}
+                placeholder="Select devices"
+                className="react-select-container"
+                classNamePrefix="react-select"
+                isDisabled={!formData.user_hospital_ids || isFetchingDevices}
+              />
+            )}
           </div>
-
-          
-          
         </div>
 
-        <DialogFooter>
+        <SheetFooter>
           <Button
             onClick={handleSubmit}
             disabled={isLoading}
-            className={``}
+            className="mt-4"
           >
             {isLoading ? (
               <>
@@ -320,12 +374,10 @@ const CreateTeam = () => {
               "Create team"
             )}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 };
 
 export default CreateTeam;
-
-//sajid
