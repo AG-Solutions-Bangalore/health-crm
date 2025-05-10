@@ -49,13 +49,66 @@ const filterMenuItems = (items, pageControl, userId) => {
   }, []);
 };
 
+const getSidebarColors = (userPosition) => {
+  switch(userPosition) {
+    case "Hospital":
+      return {
+        background: "bg-blue-50",
+        border: "border-blue-100",
+        activeBg: "bg-blue-600",
+        activeText: "text-white",
+        hoverBg: "hover:bg-blue-100",
+        text: "text-blue-800",
+        submenuActiveBg: "bg-blue-100",
+        submenuActiveText: "text-blue-700",
+        submenuHover: "hover:bg-blue-50",
+        submenuText: "text-blue-600",
+        userBg: "bg-blue-200",
+        userText: "text-blue-700"
+      };
+    case "Doctor":
+      return {
+        background: "bg-green-50",
+        border: "border-green-100",
+        activeBg: "bg-green-600",
+        activeText: "text-white",
+        hoverBg: "hover:bg-green-100",
+        text: "text-green-800",
+        submenuActiveBg: "bg-green-100",
+        submenuActiveText: "text-green-700",
+        submenuHover: "hover:bg-green-50",
+        submenuText: "text-green-600",
+        userBg: "bg-green-200",
+        userText: "text-green-700"
+      };
+    default:
+      return {
+        background: "bg-gray-50",
+        border: "border-gray-200",
+        activeBg: "bg-black",
+        activeText: "text-white",
+        hoverBg: "hover:bg-gray-100",
+        text: "text-gray-700",
+        submenuActiveBg: "bg-accent-50",
+        submenuActiveText: "text-accent-600",
+        submenuHover: "hover:bg-gray-100",
+        submenuText: "text-gray-600",
+        userBg: "bg-gray-200",
+        userText: "text-gray-700"
+      };
+  }
+};
+
 const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
   const [openSubmenu, setOpenSubmenu] = useState("");
   const location = useLocation();
   const userId = localStorage.getItem("id");
+  const userPosition = localStorage.getItem("user_position");
   const pageControl = JSON.parse(localStorage.getItem("pageControl")) || [];
   const userName = localStorage.getItem("name");
   const userEmail = localStorage.getItem("email");
+
+  const colors = getSidebarColors(userPosition);
 
   const allMenuItems = [
     {
@@ -77,6 +130,11 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
       name: "Device-S",
       path: "/device",
       icon: Cpu,
+    },
+    {
+      name: "Doctors",
+      path: "/doctors",
+      icon: User,
     },
     {
       name: "Patient",
@@ -137,7 +195,7 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
       )}
 
       <div
-        className={`fixed left-0 top-16 h-[calc(100vh-4rem)] bg-gray-50 border-r border-gray-200 transition-all duration-300 ease-in-out flex flex-col
+        className={`fixed left-0 top-16 h-[calc(100vh-4rem)] ${colors.background} ${colors.border} transition-all duration-300 ease-in-out flex flex-col
              ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
              ${isCollapsed ? "lg:w-16" : "lg:w-64"}
              w-64 z-40`}
@@ -148,7 +206,7 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
               {item.subitems ? (
                 <div
                   onClick={() => handleSubmenuClick(item.name)}
-                  className="mb-1 cursor-pointer p-2 rounded-lg hover:bg-gray-100 text-gray-700"
+                  className={`mb-1 cursor-pointer p-2 rounded-lg ${colors.hoverBg} ${colors.text}`}
                 >
                   <div className="flex items-center gap-3">
                     <item.icon className="w-5 h-5" />
@@ -172,8 +230,8 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
                        mb-1 flex items-center gap-3 p-2 rounded-lg transition-colors
                        ${
                          isActive
-                           ? "bg-black text-white"
-                           : "text-gray-700 hover:bg-gray-100"
+                           ? `${colors.activeBg} ${colors.activeText}`
+                           : `${colors.text} ${colors.hoverBg}`
                        }
                      `}
                 >
@@ -195,8 +253,8 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
                            py-2 px-3 text-sm rounded-lg block transition-colors
                            ${
                              isActive
-                               ? "bg-accent-50 text-accent-600"
-                               : "text-gray-600 hover:bg-gray-100"
+                               ? `${colors.submenuActiveBg} ${colors.submenuActiveText}`
+                               : `${colors.submenuText} ${colors.submenuHover}`
                            }
                          `}
                     >
@@ -210,16 +268,16 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
         </div>
 
         {/* User Info and Upgrade Section */}
-        <div className="p-3 border-t border-gray-200">
+        <div className={`p-3 border-t ${colors.border}`}>
           {!isCollapsed && (
             <div className="mb-1">
               <div className="flex items-center gap-3 p-2">
-                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-gray-200 text-gray-700 font-medium">
+                <div className={`flex items-center justify-center h-8 w-8 rounded-full ${colors.userBg} ${colors.userText} font-medium`}>
                   {userName?.charAt(0).toUpperCase()}
                 </div>
                 <div className="overflow-hidden">
-                  <p className="text-sm font-medium truncate">{userName}</p>
-                  <p className="text-xs text-gray-500 truncate">{userEmail}</p>
+                  <p className={`text-sm font-medium truncate ${colors.text}`}>{userName}</p>
+                  <p className={`text-xs ${colors.submenuText} truncate`}>{userEmail}</p>
                 </div>
               </div>
             </div>
@@ -232,5 +290,3 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
 };
 
 export default Sidebar;
-
-//sajids

@@ -11,19 +11,10 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import {
-  ArrowUpDown,
   ChevronDown,
-  ClipboardList,
-  Edit,
-  Edit2,
-  Eye,
   Loader2,
   RefreshCw,
   Search,
-  SquarePlus,
-  Trash,
-  UserPen,
-  View,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,6 +49,7 @@ import StatusToggle from "@/components/statusToggle/StatusToggle";
 import CreateDevice from "./CreateDevice";
 import { cn } from "@/lib/utils";
 import EditDevice from "./EditDevice";
+import moment from "moment";
 
 const DeviceList = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -81,6 +73,7 @@ const DeviceList = () => {
       return response?.data?.device;
     },
   });
+
   const [sorting, setSorting] = useState([]);
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
@@ -103,6 +96,19 @@ const DeviceList = () => {
       accessorKey: "deviceRemark",
       header: "Remarks",
       cell: ({ row }) => <div>{row.getValue("deviceRemark")}</div>,
+    },
+    {
+      accessorKey: "devicelatestdate",
+      header: "Last Sync",
+       cell: ({ row }) => {
+              const value = row.getValue("devicelatestdate");
+              const formatted = value
+                ? moment(value, "YYYY-MM-DD HH:mm:ss").format("DD-MM-YYYY HH:mm:ss")
+                : "-";
+              return (
+                <div className="text-slate-600 font-mono text-sm">{formatted}</div>
+              );
+            },
     },
     {
       accessorKey: "device_status",
@@ -178,6 +184,7 @@ const DeviceList = () => {
     }
   };
 
+  
   if (isLoading) {
     return (
       <Layout>

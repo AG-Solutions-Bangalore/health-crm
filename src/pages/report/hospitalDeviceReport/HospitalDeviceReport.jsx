@@ -21,10 +21,13 @@ import {
 import ExcelJS from "exceljs";
 import { RiFileExcel2Line } from "react-icons/ri";
 import { Base_Url } from "@/config/BaseUrl";
+import { getNavbarColors } from "@/components/buttonColors/ButtonColors";
 
 const HospitalDeviceReport = () => {
   const containerRef = useRef();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const userPosition = localStorage.getItem("user_position");
+  const colors = getNavbarColors(userPosition);
   const [visibleColumns, setVisibleColumns] = useState({
     deviceNameOrId: true,
     deviceMacAddress: true,
@@ -269,10 +272,10 @@ const HospitalDeviceReport = () => {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button className="print-hide" onClick={handlPrintPdf}>
+              <Button className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide`} onClick={handlPrintPdf}>
                 <Printer className="h-4 w-4 mr-1" /> Print
               </Button>
-              <Button className="print-hide" onClick={downloadExcel}>
+              <Button className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide`} onClick={downloadExcel}>
                 <RiFileExcel2Line className="h-3 w-3 mr-1" /> Excel
               </Button>
             </div>

@@ -46,8 +46,8 @@ export const useFetchCompanies = () => {
     );
   };
 
-  export const useFetchDeviceUsers = () => {
+  export const useFetchHospitals = () => {
     return useQuery(
-      createQueryConfig(["devices"], "/api/panel-fetch-device-user")
+      createQueryConfig(["hospital"], "/api/panel-fetch-hospital")
     );
   };

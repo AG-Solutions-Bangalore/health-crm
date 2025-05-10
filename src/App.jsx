@@ -37,7 +37,7 @@ function App() {
     <>
        <Toaster richColors position="top-right" />
          <SessionTimeoutTracker expiryTime={time} onLogout={handleLogout} />
-         <DisableInspect/>
+         {/* <DisableInspect/> */}
          <ValidationWrapper>
        <AppRoutes />
        </ValidationWrapper>

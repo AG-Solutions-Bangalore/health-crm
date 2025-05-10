@@ -21,53 +21,59 @@ import {
 import { ChevronDown, Download, Loader2, Printer, RefreshCw } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 import { Base_Url } from "@/config/BaseUrl";
+import { getNavbarColors } from "@/components/buttonColors/ButtonColors";
 
 const readingIcons = {
   Pressure: (
     <img
       src="/icon/pressure-icon.png"
       alt="Pressure"
-      className="w-10 h-10 print:w-6 print:h-6"
+      className="w-16 h-16 print:w-16 print:h-16"
     />
   ),
   Glucose: (
     <img
       src="/icon/glucose-icon.png"
       alt="Glucose"
-      className="w-10 h-10 print:w-6 print:h-6"
+      className="w-16 h-16 print:w-16 print:h-16"
     />
   ),
   Oxygen: (
     <img
       src="/icon/bloodspo2-200x197.png"
       alt="Oxygen"
-      className="w-10 h-10 print:w-6 print:h-6"
+      className="w-16 h-16 print:w-16 print:h-16"
     />
   ),
   TempF: (
     <img
       src="/icon/temperatute-icon.png"
       alt="Temperature"
-      className="w-10 h-10 print:w-6 print:h-6"
+      className="w-16 h-16 print:w-16 print:h-16"
     />
   ),
   TempC: (
     <img
       src="/icon/temperatute-icon.png"
       alt="Temperature"
-      className="w-10 h-10 print:w-6 print:h-6"
+      className="w-16 h-16 print:w-16 print:h-16"
     />
   ),
-  ECG: <span className="text-2xl print:text-lg">📈</span>,
+ ECG: (
+  <span className="text-[4rem] w-16 h-16 print:text-[4rem] print:w-16 print:h-16 flex items-center justify-center">
+    📈
+  </span>
+),
+
   Heartrate: (
     <img
       src="/icon/rate-icon.png"
       alt="Heartrate"
-      className="w-10 h-10 print:w-6 print:h-6"
+      className="w-16 h-16 print:w-16 print:h-16"
     />
   ),
-  Weight: <span className="text-2xl print:text-lg">⚖️</span>,
-  Height: <span className="text-2xl print:text-lg">📏</span>,
+  Weight: <span className="text-[4rem] w-16 h-16 print:text-[4rem] print:w-16 print:h-16 flex items-center justify-center">⚖️</span>,
+  Height: <span className="text-[4rem] w-16 h-16 print:text-[4rem] print:w-16 print:h-16 flex items-center justify-center">📏</span>,
 };
 
 const readingTypeMappings = {
@@ -86,7 +92,9 @@ const ReportView = () => {
   const { id } = useParams();
   const location = useLocation();
   const containerRef = useRef();
-
+const userPosition = localStorage.getItem("user_position");
+  
+      const colors = getNavbarColors(userPosition);
   // Date state
   const [selectedDate, setSelectedDate] = useState(null);
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
@@ -315,9 +323,16 @@ const ReportView = () => {
         </div>
       );
     }
+if (reading.readingType === "T" || reading.readingType === "TC") {
+    const numericValue = parseFloat(reading.readingValue);
+    if (!isNaN(numericValue)) {
+      return Math.round(numericValue * 100) / 100; 
+    }
+  }
 
-    const formattedValue = reading.readingValue;
-    return formattedValue;
+  return reading.readingValue;
+    // const formattedValue = reading.readingValue;
+    // return formattedValue;
   };
 
   const handleRefresh = async () => {
@@ -346,7 +361,7 @@ const ReportView = () => {
             </div>
           </div>
           <div className="flex flex-col md:flex-row items-center gap-2">
-            <div className="flex items-center space-x-2 print-hide">
+            {/* <div className="flex items-center space-x-2 print-hide">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -375,11 +390,11 @@ const ReportView = () => {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            </div>
+            </div> */}
             <Button
               variant="outline"
               size="sm"
-              className="print-hide"
+                className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide`}
               onClick={handlPrintPdf}
             >
               <Printer className="h-4 w-4" /> Report
@@ -491,27 +506,28 @@ const ReportView = () => {
                   <div className="flex items-center justify-between print:items-start">
                     <div className="flex flex-col items-start">
                       <div className="flex items-center print:items-start">
-                        <span className="text-2xl mr-2 print:text-lg print:mr-1">
+                        <span className="text-2xl mr-2 print:text-2xl print:mr-2  ">
                           {readingIcons[category]}
                         </span>
 
-                        <h3 className="text-lg font-semibold print:text-sm">
+                        <h3 className="text-2xl font-semibold print:text-2xl ">
                           {category}
                         </h3>
                       </div>
                       {readings.length > 0 && (
-                        <span className="text-sm text-gray-500 ml-2 print:text-xs print:ml-0">
-                          {moment(readings[0].readingTimeUTC).format("h:mm A")}
+                        <span className="text-sm text-gray-500 mt-3 print:text-sm  print:ml-0 ">
+                          {moment(readings[0].readingTimeUTC).format("D MMM YYYY , h:mm A")}
                         </span>
                       )}
                     </div>
+                    
                     {readings.length > 0 && (
-                      <div className="text-right print:text-left">
-                        <div className="text-2xl font-semibold print:text-lg">
+                      <div className="text-right print:text-left ">
+                        <div className="text-2xl font-semibold print:text-2xl">
                           {formatReadingValue(readings[0])}
                         </div>
                         {readings[0].readingType !== "ECG" && (
-                          <div className="text-sm font-medium text-gray-600 print:text-xs">
+                          <div className="text-sm font-medium text-gray-600 print:text-sm">
                             {readings[0].readingType}
                           </div>
                         )}

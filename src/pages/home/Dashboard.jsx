@@ -63,10 +63,13 @@ import {
 import Layout from "@/components/Layout";
 import { Base_Url } from "@/config/BaseUrl";
 import { toast } from "sonner";
+import { getNavbarColors } from '@/components/buttonColors/ButtonColors';
 
 const Dashboard = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
+const userPosition = localStorage.getItem("user_position");
 
+    const colors = getNavbarColors(userPosition);
   const queryClient = useQueryClient();
 
   const { data: dashboardData, isLoading, isError } = useQuery({
@@ -244,7 +247,7 @@ const Dashboard = () => {
               onClick={handleRefresh} 
               variant="outline" 
               size="sm"
-              className="h-9 px-3 text-sm bg-white"
+              className={`h-9 px-3 text-sm ${colors.buttonBg} ${colors.buttonHover} text-white`}
               disabled={isRefreshing}
             >
               {isRefreshing ? (

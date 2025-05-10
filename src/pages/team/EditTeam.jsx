@@ -28,19 +28,18 @@ import axios from "axios";
 import { Edit, Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ButtonConfig } from "@/config/ButtonConfig";
-import { Base_Url } from "@/config/BaseUrl";
+import { Base_Url } from "@/config/Baseurl";
 import { toast } from "sonner";
 import ReactSelect from 'react-select';
-import { useFetchDeviceUsers } from "@/hooks/useApi";
 
 const EditTeam = ({ teamId }) => {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
+  const [deviceOptions, setDeviceOptions] = useState([]);
  
   const queryClient = useQueryClient();
-  const { data: deviceData } = useFetchDeviceUsers();
   
   const [formData, setFormData] = useState({
     mobile: "",
@@ -49,12 +48,6 @@ const EditTeam = ({ teamId }) => {
     status: "Active",
     user_device_ids: []
   });
-
-  // Prepare device options for react-select
-  const deviceOptions = deviceData?.device?.map(device => ({
-    value: device.id.toString(),
-    label: `${device.deviceNameOrId} (${device.deviceMacAddress})`
-  })) || [];
 
   const fetchTeamData = async () => {
     setIsFetching(true);
@@ -67,6 +60,14 @@ const EditTeam = ({ teamId }) => {
         }
       );
       const teamData = response.data.team;
+      const devices = response.data.device || [];
+      
+      // Prepare device options
+      const options = devices.map(device => ({
+        value: device.id.toString(),
+        label: `${device.deviceNameOrId} (${device.deviceMacAddress})`
+      }));
+      setDeviceOptions(options);
       
       // Convert comma-separated device IDs to array
       const deviceIds = teamData.user_device_ids ? teamData.user_device_ids.split(',') : [];
@@ -154,10 +155,10 @@ const EditTeam = ({ teamId }) => {
   // Get currently selected devices for the select component
   const selectedDevices = formData.user_device_ids
     .map(id => {
-      const device = deviceData?.device?.find(d => d.id.toString() === id);
+      const device = deviceOptions.find(d => d.value === id);
       return device ? { 
-        value: device.id.toString(), 
-        label: `${device.deviceNameOrId}` 
+        value: device.value, 
+        label: device.label.split(' (')[0] // Remove the MAC address part
       } : null;
     })
     .filter(Boolean);
@@ -223,6 +224,18 @@ const EditTeam = ({ teamId }) => {
                 placeholder="Enter email "
               />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="user_device_ids">Devices</Label>
+              <ReactSelect
+                isMulti
+                options={deviceOptions}
+                value={selectedDevices}
+                onChange={handleDeviceChange}
+                placeholder="Select devices"
+                className="react-select-container"
+                classNamePrefix="react-select"
+              />
+            </div>
 
             <div className="grid gap-2">
               <Label htmlFor="status">Status</Label>
@@ -240,18 +253,7 @@ const EditTeam = ({ teamId }) => {
               </Select>
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="user_device_ids">Devices</Label>
-              <ReactSelect
-                isMulti
-                options={deviceOptions}
-                value={selectedDevices}
-                onChange={handleDeviceChange}
-                placeholder="Select devices"
-                className="react-select-container"
-                classNamePrefix="react-select"
-              />
-            </div>
+            
           </div>
         )}
 

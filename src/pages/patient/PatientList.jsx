@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-import {  useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
   flexRender,
@@ -57,18 +57,22 @@ import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { useSelector } from "react-redux";
 import { Base_Url } from "@/config/BaseUrl";
-import { PatientHistory, PatientReport } from "@/components/buttonIndex/ButtonComponents";
+import {
+  PatientHistory,
+  PatientReport,
+} from "@/components/buttonIndex/ButtonComponents";
 import { toast } from "sonner";
+import moment from "moment";
 
 const PatientList = () => {
   const { selectedDevice } = useSelector((state) => state.device);
   const deviceId = selectedDevice?.macid;
   const [isRefreshing, setIsRefreshing] = useState(false);
-const [statusUpdateState, setStatusUpdateState] = useState({
+  const [statusUpdateState, setStatusUpdateState] = useState({
     open: false,
     patientId: null,
     selectedStatus: "",
-    currentStatus: ""
+    currentStatus: "",
   });
   const {
     data: patient,
@@ -109,26 +113,26 @@ const [statusUpdateState, setStatusUpdateState] = useState({
     },
     onSuccess: (response) => {
       refetch();
-      toast.success(response?.msg || "Status updated successfully")
-      setStatusUpdateState(prev => ({
+      toast.success(response?.msg || "Status updated successfully");
+      setStatusUpdateState((prev) => ({
         ...prev,
         open: false,
         patientId: null,
         selectedStatus: "",
-        currentStatus: ""
+        currentStatus: "",
       }));
     },
     onError: (error) => {
       console.error("Error updating status:", error);
-      toast.error("Error updating status ")
-    }
+      toast.error("Error updating status ");
+    },
   });
 
   const handleStatusUpdate = () => {
     if (statusUpdateState.selectedStatus !== statusUpdateState.currentStatus) {
       updateStatus({
         patientId: statusUpdateState.patientId,
-        newStatus: statusUpdateState.selectedStatus
+        newStatus: statusUpdateState.selectedStatus,
       });
     }
   };
@@ -146,7 +150,7 @@ const [statusUpdateState, setStatusUpdateState] = useState({
       header: "Email",
       cell: ({ row }) => <div>{row.getValue("email")}</div>,
     },
-  
+
     {
       accessorKey: "firstName",
       header: "Name",
@@ -160,70 +164,81 @@ const [statusUpdateState, setStatusUpdateState] = useState({
         );
       },
     },
-   {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => {
-          const status = row.getValue("status");
-          const patientId = row.original.id;
-          
-          return (
-            <div className="flex items-center gap-2">
-              <span className={cn(
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const status = row.getValue("status");
+        const patientId = row.original.id;
+
+        return (
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
                 "px-2 py-1 rounded-full text-xs",
-                status === "Active" ? "bg-green-100 text-green-800" : 
-                status === "Inactive" ? "bg-yellow-100 text-yellow-800" : 
-                "bg-red-100 text-red-800"
-              )}>
-                {status}
-              </span>
-              
-              <Popover 
-                open={statusUpdateState.open && statusUpdateState.patientId === patientId} 
-                onOpenChange={(open) => setStatusUpdateState({
+                status === "Active"
+                  ? "bg-green-100 text-green-800"
+                  : status === "Inactive"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : "bg-red-100 text-red-800"
+              )}
+            >
+              {status}
+            </span>
+
+            <Popover
+              open={
+                statusUpdateState.open &&
+                statusUpdateState.patientId === patientId
+              }
+              onOpenChange={(open) =>
+                setStatusUpdateState({
                   open,
                   patientId: open ? patientId : null,
                   selectedStatus: status,
-                  currentStatus: status
-                })}
-              >
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-56 p-2">
-                  <div className="space-y-2">
-                    <Select 
-                      value={statusUpdateState.selectedStatus} 
-                      onValueChange={(value) => setStatusUpdateState(prev => ({
+                  currentStatus: status,
+                })
+              }
+            >
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-2">
+                <div className="space-y-2">
+                  <Select
+                    value={statusUpdateState.selectedStatus}
+                    onValueChange={(value) =>
+                      setStatusUpdateState((prev) => ({
                         ...prev,
-                        selectedStatus: value
-                      }))}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
-                        <SelectItem value="Delete">Delete</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button 
-                      size="sm" 
-                      className="w-full"
-                      onClick={handleStatusUpdate}
-                    >
-                      Update
-                    </Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-          );
-        },
+                        selectedStatus: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                      <SelectItem value="Delete">Delete</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    onClick={handleStatusUpdate}
+                  >
+                    Update
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        );
       },
+    },
 
     {
       id: "actions",
@@ -260,33 +275,30 @@ const [statusUpdateState, setStatusUpdateState] = useState({
               </Tooltip>
             </TooltipProvider> */}
 
-
             <PatientHistory
- onClick={() =>
-  navigate(`/patient/history/${patientId}`, {
-    state: { firstName, lastName },
-  })
-}
-/>
-            
-          
-            <PatientReport
-  onClick={() =>
-    navigate(`/patient/report/${patientId}`, {
-      state: {
-        firstName,
-        lastName,
-        sex,
-        city,
-        email,
-        address1,
-        dob,
-        cellNumber,
-      },
-    })
-  }
-/>
+              onClick={() =>
+                navigate(`/patient/history/${patientId}`, {
+                  state: { firstName, lastName },
+                })
+              }
+            />
 
+            <PatientReport
+              onClick={() =>
+                navigate(`/patient/report/${patientId}`, {
+                  state: {
+                    firstName,
+                    lastName,
+                    sex,
+                    city,
+                    email,
+                    address1,
+                    dob,
+                    cellNumber,
+                  },
+                })
+              }
+            />
           </div>
         );
       },
@@ -369,10 +381,15 @@ const [statusUpdateState, setStatusUpdateState] = useState({
                 <TooltipTrigger asChild>
                   <div className="flex items-center text-xs text-gray-500 bg-gray-50 rounded-full px-3 py-1">
                     <span>
-                      Last updated:{" "}
-                      {new Date(dataUpdatedAt).toLocaleTimeString()}
+                      Last Sync:{" "}
+                      {selectedDevice?.lastSync
+                        ? moment(
+                            selectedDevice.lastSync,
+                            "YYYY-MM-DD HH:mm:ss"
+                          ).format("DD-MM-YYYY HH:mm:ss")
+                        : "-"}
                     </span>
-                    <Button
+                    {/* <Button
                       variant="ghost"
                       size="sm"
                       onClick={handleRefresh}
@@ -384,7 +401,7 @@ const [statusUpdateState, setStatusUpdateState] = useState({
                       ) : (
                         <RefreshCw className="h-3 w-3" />
                       )}
-                    </Button>
+                    </Button> */}
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>

@@ -23,6 +23,7 @@ import HospitalList from "@/pages/hospital/HospitalList";
 import HospitalAssignDeviceList from "@/pages/hospital/hospitalAssignDevice/HospitalAssignDeviceList";
 import HospitalDeviceReport from "@/pages/report/hospitalDeviceReport/HospitalDeviceReport";
 import DeviceUser from "@/pages/deviceUser/DeviceUser";
+import DoctorsList from "@/pages/doctors/DoctorsList";
 
 function AppRoutes() {
   return (
@@ -36,6 +37,7 @@ function AppRoutes() {
       <Route path="/" element={<ProtectedRoute />}>
         <Route path="/home" element={<Dashboard />} />
 
+        <Route path="/doctors" element={<DoctorsList />} />
         <Route path="/patient" element={<PatientList />} />
 
         <Route path="/patient/history/:id" element={<PatientHistory />} />
