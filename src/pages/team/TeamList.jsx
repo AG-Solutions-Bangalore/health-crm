@@ -41,6 +41,7 @@ import CreateTeam from "./CreateTeam";
 import EditTeam from "./EditTeam";
 
 const TeamList = () => {
+  
   const {
     data: teams,
     isLoading,
@@ -72,10 +73,15 @@ const TeamList = () => {
   // Define columns for the table
   const columns = [
     {
-      accessorKey: "id",
-      header: "ID",
-      cell: ({ row }) => <div>{row.getValue("id")}</div>,
+      id: "sl_no",
+      header: "Sl No",
+      cell: ({ row }) => <div>{row.index + 1}</div>,
     },
+    // {
+    //   accessorKey: "id",
+    //   header: "ID",
+    //   cell: ({ row }) => <div>{row.getValue("id")}</div>,
+    // },
     {
       accessorKey: "company_name",
       header: ({ column }) => (
@@ -89,6 +95,29 @@ const TeamList = () => {
       ),
       cell: ({ row }) => <div>{row.getValue("company_name")}</div>,
     },
+    {
+      accessorKey: "hospital_names",
+      header: "Hospital",
+      cell: ({ row }) => {
+        const hospitals = row.getValue("hospital_names")?.split(",") || [];
+        return (
+          <div className="flex flex-wrap gap-1">
+          {hospitals.map((name, index) => (
+            <span
+              key={index}
+              className="bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded"
+            >
+              {name.trim()}
+            
+            </span>
+          ))}
+        </div>
+        
+        );
+      },
+    },
+    
+  
     {
       accessorKey: "name",
       header: "Name",

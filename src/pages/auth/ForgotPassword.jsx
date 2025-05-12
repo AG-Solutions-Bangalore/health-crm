@@ -111,17 +111,25 @@ export default function ForgotPassword() {
               
               <div className="space-y-2">
                 <Label htmlFor="username" className="text-sm font-medium">
-                  Username
+                Mobile Number
                 </Label>
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder="Enter your username"
-                  value={username}
-                  onChange={(e) => setUserName(e.target.value)}
-                  className="h-10"
-                  required
-                />
+    id="username"
+    type="tel"
+    inputMode="numeric"
+    pattern="\d*"
+    minLength={10}
+    maxLength={10}
+    placeholder="Enter your 10-digit mobile number"
+    value={username}
+    onChange={(e) => {
+      const onlyNumbers = e.target.value.replace(/\D/g, '');
+      setUserName(onlyNumbers);
+    }}
+    className="h-10"
+    required
+  />
+
               </div>
               
               <Button

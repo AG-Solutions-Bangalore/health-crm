@@ -50,6 +50,7 @@ const readingUnits = {
 const PatientSummary = () => {
   const { selectedDevice } = useSelector((state) => state.device);
   const deviceId = selectedDevice?.macid;
+  const lastSync = selectedDevice?.lastSync;
   const containerRef = useRef();
   const userPosition = localStorage.getItem("user_position");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -82,7 +83,7 @@ const PatientSummary = () => {
 
       // return response.data.patient.reverse();
     },
-    enabled: !!deviceId,
+    enabled: !!deviceId && !!lastSync,
   });
 
   // Query to get readings for all patients
@@ -319,9 +320,9 @@ const PatientSummary = () => {
             <div className=" flex items-center text-xs text-gray-500 bg-gray-50 rounded-full px-3 py-0.5">
              <span>
                                    Last Sync:{" "}
-                                   {selectedDevice?.lastSync
+                                   {lastSync
                                      ? moment(
-                                         selectedDevice.lastSync,
+                                      lastSync,
                                          "YYYY-MM-DD HH:mm:ss"
                                        ).format("DD-MM-YYYY HH:mm:ss")
                                      : "-"}

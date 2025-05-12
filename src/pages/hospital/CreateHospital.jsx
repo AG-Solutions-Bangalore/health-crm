@@ -17,10 +17,10 @@ import { Loader2, SquarePlus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { Base_Url } from "@/config/Baseurl";
 import { Textarea } from "@/components/ui/textarea";
 import { HospitalCreate } from "@/components/buttonIndex/ButtonComponents";
 import { getNavbarColors } from "@/components/buttonColors/ButtonColors";
+import { Base_Url } from "../../config/BaseUrl";
 
 const CreateHospital = () => {
   const [open, setOpen] = useState(false);

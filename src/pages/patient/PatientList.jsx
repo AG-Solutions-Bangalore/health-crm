@@ -67,6 +67,7 @@ import moment from "moment";
 const PatientList = () => {
   const { selectedDevice } = useSelector((state) => state.device);
   const deviceId = selectedDevice?.macid;
+  const lastSync = selectedDevice?.lastSync;
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusUpdateState, setStatusUpdateState] = useState({
     open: false,
@@ -96,7 +97,7 @@ const PatientList = () => {
       return response.data.patient;
       // return response.data.patient.reverse();
     },
-    enabled: !!deviceId,
+    enabled: !!deviceId && !!lastSync,
   });
 
   const { mutate: updateStatus } = useMutation({
@@ -376,39 +377,20 @@ const PatientList = () => {
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl text-gray-800">Patient List</h1>
           <div className="flex items-center space-x-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
+          
                   <div className="flex items-center text-xs text-gray-500 bg-gray-50 rounded-full px-3 py-1">
                     <span>
                       Last Sync:{" "}
-                      {selectedDevice?.lastSync
+                      {lastSync
                         ? moment(
-                            selectedDevice.lastSync,
+                          lastSync,
                             "YYYY-MM-DD HH:mm:ss"
                           ).format("DD-MM-YYYY HH:mm:ss")
                         : "-"}
                     </span>
-                    {/* <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleRefresh}
-                      className="ml-2 p-1 hover:bg-gray-100 rounded-full"
-                      disabled={isRefreshing}
-                    >
-                      {isRefreshing ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-3 w-3" />
-                      )}
-                    </Button> */}
+                 
                   </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Click to refresh data</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+               
           </div>
         </div>
         {/* searching and column filter  */}
