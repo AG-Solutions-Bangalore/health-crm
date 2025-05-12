@@ -10,26 +10,19 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import {
-  ChevronDown,
-  Loader2,
-  RefreshCw,
-  Search,
-  MoreVertical,
-} from "lucide-react";
+import { ChevronDown, Loader2, Search, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -46,12 +39,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -187,59 +175,37 @@ const PatientList = () => {
               {status}
             </span>
 
-            <Popover
-              open={
-                statusUpdateState.open &&
-                statusUpdateState.patientId === patientId
-              }
-              onOpenChange={(open) =>
-                setStatusUpdateState({
-                  open,
-                  patientId: open ? patientId : null,
-                  selectedStatus: status,
-                  currentStatus: status,
-                })
-              }
-            >
-              <PopoverTrigger asChild>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-56 p-2">
-                <div className="space-y-2">
-                  <Select
-                    value={statusUpdateState.selectedStatus}
-                    onValueChange={(value) =>
-                      setStatusUpdateState((prev) => ({
-                        ...prev,
-                        selectedStatus: value,
-                      }))
-                    }
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                {["Active", "Inactive", "Delete"].map((option) => (
+                  <DropdownMenuCheckboxItem
+                    key={option}
+                    checked={status === option}
+                    onCheckedChange={() => {
+                      if (status !== option) {
+                        updateStatus({
+                          patientId,
+                          newStatus: option,
+                        });
+                      }
+                    }}
+                    className="capitalize"
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Inactive">Inactive</SelectItem>
-                      <SelectItem value="Delete">Delete</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    size="sm"
-                    className="w-full"
-                    onClick={handleStatusUpdate}
-                  >
-                    Update
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
+                    {option}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         );
       },
     },
+
 
     {
       id: "actions",
@@ -377,20 +343,16 @@ const PatientList = () => {
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl text-gray-800">Patient List</h1>
           <div className="flex items-center space-x-2">
-          
-                  <div className="flex items-center text-xs text-gray-500 bg-gray-50 rounded-full px-3 py-1">
-                    <span>
-                      Last Sync:{" "}
-                      {lastSync
-                        ? moment(
-                          lastSync,
-                            "YYYY-MM-DD HH:mm:ss"
-                          ).format("DD-MM-YYYY HH:mm:ss")
-                        : "-"}
-                    </span>
-                 
-                  </div>
-               
+            <div className="flex items-center text-xs text-gray-500 bg-gray-50 rounded-full px-3 py-1">
+              <span>
+                Last Sync:{" "}
+                {lastSync
+                  ? moment(lastSync, "YYYY-MM-DD HH:mm:ss").format(
+                      "DD-MM-YYYY HH:mm:ss"
+                    )
+                  : "-"}
+              </span>
+            </div>
           </div>
         </div>
         {/* searching and column filter  */}
