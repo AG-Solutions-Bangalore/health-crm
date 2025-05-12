@@ -22,30 +22,39 @@ import axios from "axios";
 import { Loader2, SquarePlus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
-import { useFetchCompanies, useFetchUserType, useFetchHospitals } from "@/hooks/useApi";
+import {
+  useFetchCompanies,
+  useFetchUserType,
+  useFetchHospitals,
+} from "@/hooks/useApi";
 import { toast } from "sonner";
 import { Base_Url } from "@/config/BaseUrl";
-import ReactSelect from 'react-select';
+import ReactSelect from "react-select";
+import { getNavbarColors } from "@/components/buttonColors/ButtonColors";
+import { DoctorCreate } from "@/components/buttonIndex/ButtonComponents";
 
 const CreateTeam = () => {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingDevices, setIsFetchingDevices] = useState(false);
   const [deviceOptions, setDeviceOptions] = useState([]);
+  const userPosition = localStorage.getItem("user_position");
 
+  const colors = getNavbarColors(userPosition);
   const { pathname } = useLocation();
   const queryClient = useQueryClient();
   const userId = localStorage.getItem("id");
+  const companyID = localStorage.getItem("companyID");
 
   const [formData, setFormData] = useState({
-    company_id: "",
+    company_id: userId === "5" ? "" : companyID,
     name: "",
     email: "",
     mobile: "",
-    user_type: "",
-    user_position: "",
+    user_type: userId === "5" ? "" : "1",
+    user_position: userId === "5" ? "" : "Doctor",
     user_hospital_ids: "",
-    user_device_ids: []
+    user_device_ids: [],
   });
 
   const { data: companiesData } = useFetchCompanies({
@@ -67,9 +76,9 @@ const CreateTeam = () => {
         }
       );
       const devices = response.data.device || [];
-      const options = devices.map(device => ({
+      const options = devices.map((device) => ({
         value: device.id.toString(),
-        label: `${device.deviceNameOrId}`
+        label: `${device.deviceNameOrId}`,
       }));
       setDeviceOptions(options);
     } catch (error) {
@@ -111,10 +120,10 @@ const CreateTeam = () => {
           : "",
       }));
     } else if (name === "user_hospital_ids") {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         user_hospital_ids: value,
-        user_device_ids: [] // Clear devices when hospital changes
+        user_device_ids: [],
       }));
       fetchDevicesByHospital(value);
     } else {
@@ -126,14 +135,15 @@ const CreateTeam = () => {
   };
 
   const handleDeviceChange = (selectedOptions) => {
-    const deviceIds = selectedOptions.map(option => option.value);
-    setFormData(prev => ({
+    const deviceIds = selectedOptions.map((option) => option.value);
+    setFormData((prev) => ({
       ...prev,
-      user_device_ids: deviceIds
+      user_device_ids: deviceIds,
     }));
   };
 
   const handleSubmit = async () => {
+    console.log("formdata", formData);
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (
       !formData.company_id ||
@@ -159,12 +169,12 @@ const CreateTeam = () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
-   
+
       const response = await axios.post(
         `${Base_Url}/api/panel-create-team`,
         {
           ...formData,
-          user_device_ids: formData.user_device_ids.join(',')
+          user_device_ids: formData.user_device_ids.join(","),
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -182,7 +192,7 @@ const CreateTeam = () => {
           user_type: "",
           user_position: "",
           user_hospital_ids: "",
-          user_device_ids: []
+          user_device_ids: [],
         });
         await queryClient.invalidateQueries(["teams"]);
         setOpen(false);
@@ -200,26 +210,31 @@ const CreateTeam = () => {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         {pathname === "/team" || pathname === "/userManagement" ? (
-          <Button
-            variant="default"
-            className={`ml-2`}
-          >
+          <Button variant="default" className={`ml-2`}>
             <SquarePlus className="h-4 w-4" /> Team
           </Button>
-        ) : pathname === "/create-contract" ? (
-          <p className="text-xs text-yellow-700 ml-2 mt-1 w-32 hover:text-red-800 cursor-pointer">
-            Create Team
-          </p>
+        ) : pathname === "/doctors" ? (
+          // <Button
+          //   variant="default"
+          //   className={`ml-2 ${colors.buttonBg} ${colors.buttonHover} text-white`}
+          // >
+          //   <SquarePlus className="h-4 w-4" /> Doctor
+          // </Button>
+          <DoctorCreate
+            className={`ml-2 ${colors.buttonBg} ${colors.buttonHover} text-white`}
+          />
         ) : null}
       </SheetTrigger>
 
       <SheetContent className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Create New Team</SheetTitle>
+          <SheetTitle>
+            Create New {`${pathname === "/doctors" ? "Doctor" : "Team"}`}
+          </SheetTitle>
         </SheetHeader>
 
         <div className="grid gap-4 py-4">
-          {userId === "5" ? (
+          {userId === "5" && (
             <div className="grid gap-2">
               <Label htmlFor="company_id">Company</Label>
               <Select
@@ -240,22 +255,13 @@ const CreateTeam = () => {
                 </SelectContent>
               </Select>
             </div>
-          ) : (
-            <div className="grid gap-2">
-              <Label htmlFor="company_id">Company</Label>
-              <Input
-                id="company_id"
-                name="company_id"
-                value={formData.company_id}
-                onChange={handleInputChange}
-                placeholder="Enter Company"
-              />
-            </div>
           )}
- <div className="grid gap-2">
+          <div className="grid gap-2">
             <Label htmlFor="user_hospital_ids">Hospital</Label>
             <Select
-              onValueChange={(value) => handleSelectChange(value, "user_hospital_ids")}
+              onValueChange={(value) =>
+                handleSelectChange(value, "user_hospital_ids")
+              }
               value={formData.user_hospital_ids}
             >
               <SelectTrigger>
@@ -308,33 +314,37 @@ const CreateTeam = () => {
               maxLength="10"
             />
           </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="user_position">User Position</Label>
-            <Select
-              onValueChange={(value) =>
-                handleSelectChange(value, "user_position")
-              }
-              value={formData.user_position}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select position" />
-              </SelectTrigger>
-              <SelectContent>
-                {userTypeData?.userType?.length > 0 ? (
-                  userTypeData.userType.map((position, index) => (
-                    <SelectItem key={index} value={position.user_position}>
-                      {position.user_position}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500 p-2">Loading...</p>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-
-         
+          {userId === "5" ? (
+            <div className="grid gap-2">
+              <Label htmlFor="user_position">User Position</Label>
+              <Select
+                onValueChange={(value) =>
+                  handleSelectChange(value, "user_position")
+                }
+                value={formData.user_position}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select position" />
+                </SelectTrigger>
+                <SelectContent>
+                  {userTypeData?.userType?.length > 0 ? (
+                    userTypeData.userType.map((position, index) => (
+                      <SelectItem key={index} value={position.user_position}>
+                        {position.user_position}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500 p-2">Loading...</p>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <>
+              <input type="hidden" name="user_position" value="Doctor" />
+              <input type="hidden" name="user_type" value="1" />
+            </>
+          )}
 
           <div className="grid gap-2">
             <Label htmlFor="user_device_ids">Devices</Label>
@@ -346,7 +356,7 @@ const CreateTeam = () => {
               <ReactSelect
                 isMulti
                 options={deviceOptions}
-                value={deviceOptions.filter(option => 
+                value={deviceOptions.filter((option) =>
                   formData.user_device_ids.includes(option.value)
                 )}
                 onChange={handleDeviceChange}
@@ -360,18 +370,14 @@ const CreateTeam = () => {
         </div>
 
         <SheetFooter>
-          <Button
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className="mt-4"
-          >
+          <Button onClick={handleSubmit} disabled={isLoading} className="mt-4">
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Creating...
               </>
             ) : (
-              "Create team"
+              `Create ${pathname === "/doctors" ? "Doctor" : "Team"}`
             )}
           </Button>
         </SheetFooter>

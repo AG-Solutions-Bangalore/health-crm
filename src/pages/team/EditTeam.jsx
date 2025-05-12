@@ -28,9 +28,10 @@ import axios from "axios";
 import { Edit, Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ButtonConfig } from "@/config/ButtonConfig";
-import { Base_Url } from "@/config/Baseurl";
 import { toast } from "sonner";
 import ReactSelect from 'react-select';
+import { Base_Url } from "@/config/BaseUrl";
+import { useLocation } from "react-router-dom";
 
 const EditTeam = ({ teamId }) => {
   const [open, setOpen] = useState(false);
@@ -38,6 +39,7 @@ const EditTeam = ({ teamId }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [deviceOptions, setDeviceOptions] = useState([]);
+  const {pathname}= useLocation()
  
   const queryClient = useQueryClient();
   
@@ -187,14 +189,14 @@ const EditTeam = ({ teamId }) => {
             </DialogTrigger>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Edit Team</p>
+            <p>Edit {`${pathname === "/doctors" ? "Doctor":"Team"}`}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit Team - <span className="text-2xl">{formData.name}</span></DialogTitle>
+          <DialogTitle>Edit {`${pathname === "/doctors" ? "Doctor":"Team"}`} - <span className="text-2xl">{formData.name}</span></DialogTitle>
         </DialogHeader>
 
         {isFetching ? (
@@ -269,7 +271,7 @@ const EditTeam = ({ teamId }) => {
                 Updating...
               </>
             ) : (
-              "Update Team"
+                `Update ${pathname === "/doctors" ? "Doctor":"Team"}`
             )}
           </Button>
         </DialogFooter>

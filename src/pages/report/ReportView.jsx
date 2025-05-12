@@ -12,6 +12,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import html2pdf from 'html2pdf.js';
 import {
   Tooltip,
   TooltipContent,
@@ -22,6 +23,7 @@ import { ChevronDown, Download, Loader2, Printer, RefreshCw } from "lucide-react
 import { useReactToPrint } from "react-to-print";
 import { Base_Url } from "@/config/BaseUrl";
 import { getNavbarColors } from "@/components/buttonColors/ButtonColors";
+import { toast } from "sonner";
 
 const readingIcons = {
   Pressure: (
@@ -99,6 +101,7 @@ const userPosition = localStorage.getItem("user_position");
   const [selectedDate, setSelectedDate] = useState(null);
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   
   const {
     data: responseData,
@@ -213,7 +216,311 @@ const userPosition = localStorage.getItem("user_position");
 
     return organized;
   }, [patientReadings, selectedDate]);
+  const generatePdf = () => {
+    const element = containerRef.current;
+    
+   
+    const style = document.createElement('style');
+    style.textContent = `
+      @page {
+        size: A4 portrait;
+        margin: 5mm;
+      }
+      body {
+        font-size: 10px !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .print-hide {
+        display: none !important;
+      }
+      .patient-details {
+        padding: 6px !important;
+        margin-bottom: 8px !important;
+      }
+      .vital-card {
+        page-break-inside: avoid;
+        break-inside: avoid;
+        padding: 6px !important;
+        margin-bottom: 6px !important;
+      }
+      h1 {
+        font-size: 16px !important;
+        margin-bottom: 4px !important;
+      }
+      h2, h3 {
+        font-size: 14px !important;
+        margin-bottom: 3px !important;
+      }
+      .text-2xl {
+        font-size: 18px !important;
+      }
+      .text-lg {
+        font-size: 14px !important;
+      }
+      .text-sm {
+        font-size: 12px !important;
+      }
+      .text-xs {
+        font-size: 10px !important;
+      }
+      .grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 6px !important;
+      }
+      .gap-4 {
+        gap: 6px !important;
+      }
+      .p-4 {
+        padding: 8px !important;
+      }
+      .border {
+        border-width: 1px !important;
+      }
+      input[type="checkbox"] {
+        -webkit-appearance: checkbox !important;
+        appearance: checkbox !important;
+        width: 12px !important;
+        height: 12px !important;
+      }
+    `;
+    document.head.appendChild(style);
+  
+    const options = {
+      margin: [5, 5, 5, 5],
+      filename: `${firstName || 'Patient'}_${lastName || ''}_Medical_Report.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2,
+        useCORS: true,
+        letterRendering: true,
+        logging: false,
+      },
+      jsPDF: { 
+        unit: 'mm', 
+        format: 'a4', 
+        orientation: 'portrait',
+        compress: true
+      },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+  
+   
+    const printButtons = document.querySelectorAll('.print-hide');
+    printButtons.forEach(btn => {
+      btn.style.display = 'none';
+    });
+  
+    html2pdf()
+      .set(options)
+      .from(element)
+      .toPdf()
+      .get('pdf')
+      .then((pdf) => {
+        const totalPages = pdf.internal.getNumberOfPages();
+        
+        // Add page numbers to each page
+        for (let i = 1; i <= totalPages; i++) {
+          pdf.setPage(i);
+          pdf.setFontSize(10);
+          pdf.setTextColor(150);
+          pdf.text(
+            `Page ${i} of ${totalPages}`,
+            pdf.internal.pageSize.getWidth() - 20,
+            pdf.internal.pageSize.getHeight() - 10
+          );
+        }
+        
+        // Save the PDF
+        pdf.save();
+        
+        // Restore print buttons after PDF generation
+        printButtons.forEach(btn => {
+          btn.style.display = '';
+        });
+        
+        // Clean up the style element
+        document.head.removeChild(style);
+      });
+  };
+  const handleSendMail = async () => {
+   
+    if (!email) {
+      toast.error("Email address not available. Please add email first.");
+      return;
+    }
+  
+    setIsSendingEmail(true);
+    try {
+     
+      toast.info("Generating PDF for email...");
+      
+      const element = containerRef.current;
+        // Add print styles
+      const style = document.createElement('style');
+      style.textContent = `
+        @page {
+          size: A4 portrait;
+          margin: 5mm;
+        }
+        body {
+          font-size: 10px !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .print-hide {
+          display: none !important;
+        }
+        .patient-details {
+          padding: 6px !important;
+          margin-bottom: 8px !important;
+        }
+        .vital-card {
+          page-break-inside: avoid;
+          break-inside: avoid;
+          padding: 6px !important;
+          margin-bottom: 6px !important;
+        }
+        h1 {
+          font-size: 16px !important;
+          margin-bottom: 4px !important;
+        }
+        h2, h3 {
+          font-size: 14px !important;
+          margin-bottom: 3px !important;
+        }
+        .text-2xl {
+          font-size: 18px !important;
+        }
+        .text-lg {
+          font-size: 14px !important;
+        }
+        .text-sm {
+          font-size: 12px !important;
+        }
+        .text-xs {
+          font-size: 10px !important;
+        }
+        .grid {
+          display: grid !important;
+          grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+          gap: 6px !important;
+        }
+        .gap-4 {
+          gap: 6px !important;
+        }
+        .p-4 {
+          padding: 8px !important;
+        }
+        .border {
+          border-width: 1px !important;
+        }
+        input[type="checkbox"] {
+          -webkit-appearance: checkbox !important;
+          appearance: checkbox !important;
+          width: 12px !important;
+          height: 12px !important;
+        }
+      `;
+      document.head.appendChild(style);
+    
+      const options = {
+        margin: [5, 5, 5, 5],
+        filename: `${firstName || 'Patient'}_${lastName || ''}_Medical_Report.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2,
+          useCORS: true,
+          letterRendering: true,
+          logging: false,
+        },
+        jsPDF: { 
+          unit: 'mm', 
+          format: 'a4', 
+          orientation: 'portrait',
+          compress: true
+        },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+    
+      
+      const printButtons = document.querySelectorAll('.print-hide');
+      printButtons.forEach(btn => {
+        btn.style.display = 'none';
+      });
+    
+      
+      const pdfBlob = await new Promise((resolve) => {
+        html2pdf()
+          .set(options)
+          .from(element)
+          .toPdf()
+          .get('pdf')
+          .then((pdf) => {
+           
+            const totalPages = pdf.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+              pdf.setPage(i);
+              pdf.setFontSize(10);
+              pdf.setTextColor(150);
+              pdf.text(
+                `Page ${i} of ${totalPages}`,
+                pdf.internal.pageSize.getWidth() - 20,
+                pdf.internal.pageSize.getHeight() - 10
+              );
+            }
+            
+           
+            const blob = pdf.output('blob');
+            resolve(blob);
+            
 
+            printButtons.forEach(btn => {
+              btn.style.display = '';
+            });
+            
+           
+            document.head.removeChild(style);
+          });
+      });
+  
+      toast.success("PDF generated successfully. ");
+      toast.success("Preparing to send email... ");
+  
+     
+      const formData = new FormData();
+      formData.append('id', id);
+      formData.append('to_name', `${firstName || ''} ${lastName || ''}`);
+      formData.append('to_email', email);
+      formData.append('file_image', pdfBlob);
+  
+     
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `${Base_Url}/api/panel-send-patient-email`,
+        formData,
+        {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          },
+        }
+      );
+  
+      
+      if (response.data.code === 200) {
+        toast.success(response.data.msg);
+      } else {
+        toast.error("Failed to send email. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error sending email:", error);
+      toast.error("Error sending email. Please try again.");
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
   const handlPrintPdf = useReactToPrint({
     content: () => containerRef.current,
     documentTitle: "patient-report",
@@ -360,37 +667,8 @@ if (reading.readingType === "T" || reading.readingType === "TC") {
               Generated on: {moment().format("MMMM Do YYYY, h:mm:ss a")}
             </div>
           </div>
-          <div className="flex flex-col md:flex-row items-center gap-2">
-            {/* <div className="flex items-center space-x-2 print-hide">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center text-xs text-gray-500 bg-gray-50 rounded-full px-3 py-1">
-                      <span>
-                        Last updated:{" "}
-                        {new Date(dataUpdatedAt).toLocaleTimeString()}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleRefresh}
-                        className="ml-2 p-1 hover:bg-gray-100 rounded-full"
-                        disabled={isRefreshing}
-                      >
-                        {isRefreshing ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <RefreshCw className="h-3 w-3" />
-                        )}
-                      </Button>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Click to refresh data</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div> */}
+          {/* <div className="flex flex-col md:flex-row items-center gap-2">
+            
             <Button
               variant="outline"
               size="sm"
@@ -399,7 +677,54 @@ if (reading.readingType === "T" || reading.readingType === "TC") {
             >
               <Printer className="h-4 w-4" /> Report
             </Button>
-          </div>
+          </div> */}
+          <div className="flex flex-col md:flex-row items-center gap-2">
+  <Button
+    variant="outline"
+    size="sm"
+    className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide`}
+    onClick={handlPrintPdf}
+  >
+    <Printer className="h-4 w-4" /> Report
+  </Button>
+  <Button
+    variant="outline"
+    size="sm"
+    className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide ml-2`}
+    onClick={generatePdf}
+  >
+    <Download className="h-4 w-4" /> PDF
+  </Button>
+  <Button
+    variant="outline"
+    size="sm"
+    className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide `}
+    onClick={handleSendMail}
+    disabled={!email || isSendingEmail}
+  >
+    {isSendingEmail ? (
+      <Loader2 className="h-4 w-4 animate-spin mr-1" />
+       ) : (
+    <>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-4 w-4 "
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+        />
+      </svg>
+      Send Mail
+    </>
+  )}
+</Button>
+</div>
         </div>
 
         {/* Patient Details */}

@@ -111,17 +111,25 @@ export default function LoginAuth() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium">
-                  Username
+                  Mobile Number
                 </Label>
                 <Input
-                  id="email"
-                  type="text"
-                  value={email}
-                      placeholder="Enter your username"
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-10"
-                  required
-                />
+    id="email"
+    type="tel"
+    inputMode="numeric"
+    pattern="\d*"
+    minLength={10}
+    maxLength={10}
+    value={email}
+    placeholder="Enter your 10-digit mobile number"
+    onChange={(e) => {
+      const numericValue = e.target.value.replace(/\D/g, '');
+      setEmail(numericValue);
+    }}
+    
+    className="h-10"
+    required
+  />
               </div>
               
               <div className="space-y-2">

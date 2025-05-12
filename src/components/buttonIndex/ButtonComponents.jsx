@@ -181,11 +181,32 @@ HospitalCreate.page = "Hospital";
 
 /*---------------------------------Hospital-end------------------- */
 
+
+
+/*--------------------------------Doctors-Start-------------------- */
+export const DoctorCreate = ({ onClick, className }) => {
+  const navigate = useNavigate();
+  const userId = localStorage.getItem("id") || "";
+  const staticPermissions = getStaticPermissions();
+  if (!checkPermission(userId, "DoctorCreate", staticPermissions)) {
+    return null;
+  }
+
+  return (
+    <Button variant="default" className={className} onClick={onClick}>
+      <SquarePlus className="h-4 w-4" /> Doctor
+    </Button>
+  );
+};
+DoctorCreate.page = "Doctors";
+/*--------------------------------Doctors-End-------------------- */
+
 export default {
     PatientReport,
     PatientHistory,
     DeviceCreate,
     HospitalCreate,
+    DoctorCreate,
  
  
 };

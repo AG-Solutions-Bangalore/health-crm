@@ -132,7 +132,6 @@ const EditHospital = ({ userId }) => {
     if (
       !formData.hospitalName ||
       !formData.hospitalArea ||
-      !formData.hospitalAdd ||
       !formData.hospitalStatus ||
       !formData.hospitalMobile ||
       !formData.hospitalEmail

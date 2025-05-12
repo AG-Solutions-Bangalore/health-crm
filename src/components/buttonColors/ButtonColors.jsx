@@ -18,7 +18,7 @@ export const getNavbarColors = (userPosition) => {
       return {
        
         buttonBg: "bg-black",
-        buttonHover: "hover:bg-gray-800",
+        buttonHover: "hover:bg-gray-800 hover:text-white",
        
       };
   }
