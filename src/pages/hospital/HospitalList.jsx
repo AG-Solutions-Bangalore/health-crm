@@ -50,11 +50,14 @@ import { cn } from "@/lib/utils";
 import CreateHospital from "./CreateHospital";
 import EditHospital from "./EditHospital";
 import HospitalToggle from "@/components/statusToggle/HospitalToggle";
+import moment from "moment";
+import { getNavbarColors } from "@/components/buttonColors/ButtonColors";
 
 
 const HospitalList = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
-
+  const userPosition = localStorage.getItem("user_position");
+  const colors = getNavbarColors(userPosition);
     const {
       data: hospital,
       isLoading,
@@ -85,29 +88,34 @@ const HospitalList = () => {
     const columns = [
       {
         accessorKey: "hospitalName",
+        id: "Hospital Name",
         header: "Hospital Name",
-        cell: ({ row }) => <div>{row.getValue("hospitalName")}</div>,
+        cell: ({ row }) => <div>{row.getValue("Hospital Name")}</div>,
       },
     
       {
         accessorKey: "hospitalMobile",
+        id: "Mobile",
         header: "Mobile",
-        cell: ({ row }) => <div>{row.getValue("hospitalMobile")}</div>,
+        cell: ({ row }) => <div>{row.getValue("Mobile")}</div>,
       },
       {
         accessorKey: "hospitalEmail",
+        id: "Email",
         header: "Email",
-        cell: ({ row }) => <div>{row.getValue("hospitalEmail")}</div>,
+        cell: ({ row }) => <div>{row.getValue("Email")}</div>,
       },
       {
         accessorKey: "hospitalArea",
+        id: "Area",
         header: "Area",
-        cell: ({ row }) => <div>{row.getValue("hospitalArea")}</div>,
+        cell: ({ row }) => <div>{row.getValue("Area")}</div>,
       },
       {
         accessorKey: "hospitalCreationDate",
+        id: "Creation Date",
         header: "Creation Date",
-        cell: ({ row }) => <div>{row.getValue("hospitalCreationDate")}</div>,
+        cell: ({ row }) => <div>{moment(row.getValue("Creation Date")).format("DD-MMM-YYYY")}</div>,
       },
       // {
       //   accessorKey: "hospitalStatus",
@@ -135,9 +143,10 @@ const HospitalList = () => {
       // },
       {
             accessorKey: "hospitalStatus",
+            id: "Status",
             header: "Status",
             cell: ({ row }) => {
-              const status = row.getValue("hospitalStatus");
+              const status = row.getValue("Status");
               const hospitalId = row.original.id;
       
               return (
@@ -153,6 +162,7 @@ const HospitalList = () => {
           },
       {
         accessorKey: "id",
+        id: "Action",
         header: "Action",
         cell: ({ row }) => {
           
@@ -331,7 +341,7 @@ const HospitalList = () => {
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
                     return (
-                      <TableHead key={header.id} className="">
+                      <TableHead key={header.id}     className={` ${colors.cardHeaderBg}  ${colors.cardHeaderText} `}>
                         {header.isPlaceholder
                           ? null
                           : flexRender(

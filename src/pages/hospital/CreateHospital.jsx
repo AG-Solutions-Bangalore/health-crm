@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Sheet,
   SheetClose,
@@ -44,10 +44,7 @@ const CreateHospital = () => {
     hospitalEmail: ""
   });
 
-  const validateMobile = (mobile) => {
-    const regex = /^[0-9]{10}$/;
-    return regex.test(mobile);
-  };
+  
 
   const validateEmail = (email) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -57,14 +54,29 @@ const CreateHospital = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    // Validate mobile number
+   
     if (name === "hospitalMobile") {
-      if (value && !validateMobile(value)) {
-        setErrors(prev => ({...prev, hospitalMobile: "Mobile number must be 10 digits"}));
+      const digitsOnly = value.replace(/\D/g, ""); 
+      setFormData((prev) => ({
+        ...prev,
+        [name]: digitsOnly,
+      }));
+    
+      if (digitsOnly && digitsOnly.length !== 10) {
+        setErrors((prev) => ({
+          ...prev,
+          hospitalMobile: "Mobile number must be 10 digits",
+        }));
       } else {
-        setErrors(prev => ({...prev, hospitalMobile: ""}));
+        setErrors((prev) => ({
+          ...prev,
+          hospitalMobile: "",
+        }));
       }
+      return;
     }
+    
+    
 
     // Validate email
     if (name === "hospitalEmail") {
@@ -80,7 +92,18 @@ const CreateHospital = () => {
       [name]: value,
     }));
   };
-
+useEffect(() => {
+    if (!open) {
+      setFormData({
+        hospitalName: "",
+        hospitalArea: "",
+        hospitalAdd: "",
+        hospitalCreationDate: "",
+        hospitalMobile: "",
+        hospitalEmail: ""
+      });
+    }
+  }, [open]);
   const handleSubmit = async () => {
     // Check all required fields
     if (!formData.hospitalName || 
@@ -92,11 +115,8 @@ const CreateHospital = () => {
       return;
     }
 
-    // Validate mobile
-    if (!validateMobile(formData.hospitalMobile)) {
-      toast.error("Mobile number must be 10 digits");
-      return;
-    }
+   
+    
 
     // Validate email
     if (!validateEmail(formData.hospitalEmail)) {
@@ -167,6 +187,7 @@ const CreateHospital = () => {
               value={formData.hospitalName}
               onChange={handleInputChange}
               placeholder="Enter hospital name"
+                  maxLength="50"
               required
             />
           </div>
@@ -180,6 +201,8 @@ const CreateHospital = () => {
               onChange={handleInputChange}
               placeholder="Enter 10-digit mobile number"
               maxLength={10}
+               inputMode="numeric"
+              pattern="\d*"
               required
             />
             {errors.hospitalMobile && (
@@ -196,6 +219,8 @@ const CreateHospital = () => {
               value={formData.hospitalEmail}
               onChange={handleInputChange}
               placeholder="Enter hospital email"
+            
+                maxLength="100"
               required
             />
             {errors.hospitalEmail && (
@@ -212,6 +237,7 @@ const CreateHospital = () => {
               onChange={handleInputChange}
               placeholder="Enter hospital area"
               required
+               maxLength="50"
             />
           </div>
           
@@ -224,6 +250,7 @@ const CreateHospital = () => {
               onChange={handleInputChange}
               placeholder="Enter hospital address"
               required
+               maxLength="250"
             />
           </div>
           

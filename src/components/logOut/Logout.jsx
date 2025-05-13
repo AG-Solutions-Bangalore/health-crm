@@ -45,7 +45,8 @@ const Logout = ({ open, handleOpen }) => {
         <DialogHeader>
           <DialogTitle className="text-center">Confirm Logout</DialogTitle>
           <DialogDescription className="text-center">
-            Are you sure you want to log out?
+          You're about to log out. Would
+          you like to continue?
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="sm:justify-center">
@@ -58,7 +59,7 @@ const Logout = ({ open, handleOpen }) => {
           </Button>
           <Button
             onClick={handleLogout}
-            className="bg-red-600 hover:bg-red-700 px-6"
+            className="bg-red-600 hover:bg-red-700 px-6 font-bold"
           >
             Confirm
           </Button>

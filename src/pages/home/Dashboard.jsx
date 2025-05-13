@@ -64,6 +64,7 @@ import Layout from "@/components/Layout";
 import { Base_Url } from "@/config/BaseUrl";
 import { toast } from "sonner";
 import { getNavbarColors } from '@/components/buttonColors/ButtonColors';
+import moment from 'moment';
 
 const Dashboard = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -106,6 +107,7 @@ const userPosition = localStorage.getItem("user_position");
   const columns = [
     {
       accessorKey: "patient.firstName",
+      id: "Patient Name",
       header: "Patient Name",
       cell: ({ row }) => (
         <div className="font-medium text-slate-800">
@@ -115,15 +117,17 @@ const userPosition = localStorage.getItem("user_position");
     },
     {
       accessorKey: "deviceID",
+      id: "Device ID",
       header: "Device ID",
       cell: ({ row }) => (
         <div className="text-slate-600 font-medium text-sm">
-          {row.getValue("deviceID")}
+          {row.getValue("Device ID")}
         </div>
       ),
     },
     {
       accessorKey: "patient.deviceMacAddress",
+      id: "MAC Address",
       header: "MAC Address",
       cell: ({ row }) => (
         <div className="text-slate-600 font-mono text-xs">
@@ -133,19 +137,51 @@ const userPosition = localStorage.getItem("user_position");
     },
     {
       accessorKey: "readingType",
+      id: "Test Type",
       header: "Test Type",
-      cell: ({ row }) => (
-        <Badge variant="outline" className="font-normal">
-          {row.getValue("readingType")}
-        </Badge>
-      ),
+      // cell: ({ row }) => (
+      //   <Badge variant="outline" className="font-normal">
+      //     {row.getValue("Test Type")}
+      //   </Badge>
+      // ),
+      cell: ({ row }) => {
+        const testType = row.original.readingType;
+        const unitMap = {
+          BPSITL:"Pressure",
+          GLF:"Glucose",
+          GL:"Glucose",
+          GLR:"Glucose",
+          GLRMM:"Glucose",
+          GLMM:"Glucose",
+          OXY:"Oxygen",
+          T:"TempF",
+          TC:"TempC",
+          ECG:"ECG",
+          BPM:"Heartrate",
+          WT:"Weight",
+          WTKG:"Weight",
+          H:"Height",
+          HCM:"Height",
+
+
+        };
+      
+        return (
+          <Badge variant="outline" className="font-normal">
+            {unitMap[testType]}
+       
+            </Badge>
+        );
+      },
     },
     {
       accessorKey: "readingTimeUTC",
+      id: "Test Time",
       header: "Test Time",
       cell: ({ row }) => (
         <div className="text-slate-600 text-sm">
-          {new Date(row.getValue("readingTimeUTC")).toLocaleString()}
+          
+          {moment(row.getValue("Test Time")).format("D MMM YYYY, h:mm A")}
         </div>
       ),
     },
@@ -239,37 +275,47 @@ const userPosition = localStorage.getItem("user_position");
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-1">
           <div>
             <h2 className="text-xl font-semibold text-slate-800">Dashboard Overview</h2>
-            <p className="text-sm text-slate-500">Summary of medical tests and patient data</p>
+            <p className="text-sm text-slate-500">Summary of Patients Data &
+            Test Reports</p>
           </div>
           
           <div className="flex gap-2 flex-wrap">
-            <Button 
-              onClick={handleRefresh} 
-              variant="outline" 
-              size="sm"
-              className={`h-9 px-3 text-sm ${colors.buttonBg} ${colors.buttonHover} text-white`}
-              disabled={isRefreshing}
-            >
-              {isRefreshing ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                  Refreshing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                  Refresh
-                </>
-              )}
-            </Button>
+          <TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button 
+        onClick={handleRefresh} 
+        variant="outline" 
+        size="sm"
+        className={`h-9 px-3 text-sm ${colors.buttonBg} ${colors.buttonHover} text-white`}
+        disabled={isRefreshing}
+      >
+        {isRefreshing ? (
+          <>
+            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+            Refreshing...
+          </>
+        ) : (
+          <>
+            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+            Refresh
+          </>
+        )}
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent>
+      <div className="flex items-center text-xs">
+        <Clock className="h-3 w-3 mr-1" />
+        Last updated: {moment(new Date()).format("D MMM YYYY, h:mm A")}
+      </div>
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
+           
           </div>
         </div>
         
-        {/* Last Updated Info */}
-        <div className="flex items-center text-xs text-slate-500">
-          <Clock className="h-3 w-3 mr-1" />
-          Last updated: {new Date().toLocaleString()}
-        </div>
+      
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-3">
@@ -372,11 +418,11 @@ const userPosition = localStorage.getItem("user_position");
 
         {/* Recent Tests Table */}
         <Card className="shadow-sm">
-          <CardHeader className="py-3 px-4 border-b bg-slate-50">
+          <CardHeader className={`py-3 px-4 border-b ${colors.cardHeaderBg} ${colors.cardHeaderText} `}>
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-slate-700 flex items-center">
                 <Activity className="h-4 w-4 mr-2 text-slate-500" />
-                Recent Tests (Last 5)
+                Recent Tests (Latest 5)
               </CardTitle>
             </div>
           </CardHeader>

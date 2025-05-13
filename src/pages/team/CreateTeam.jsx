@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import axios from "axios";
 import { Loader2, SquarePlus } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import {
   useFetchCompanies,
@@ -62,7 +62,29 @@ const CreateTeam = () => {
   });
 
   const { data: userTypeData } = useFetchUserType();
-  const { data: hospitalsData } = useFetchHospitals();
+
+  // const { data: hospitalsData } = useFetchHospitals();
+
+  const {
+    data: hospitalsData,
+   
+  } = useQuery({
+    queryKey: ["dashboard"],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `${Base_Url}/api/panel-fetch-hospital`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      return response.data;
+    },
+    onError: (error) => {
+      toast.error("Failed to fetch hospital data");
+      console.error("Create hospital error:", error);
+    },
+  });
 
   const fetchDevicesByHospital = async (hospitalId) => {
     if (!hospitalId) return;
@@ -141,7 +163,21 @@ const CreateTeam = () => {
       user_device_ids: deviceIds,
     }));
   };
-
+  useEffect(() => {
+    if (!open) {
+      setFormData({
+        company_id: userId === "5" ? "" : companyID,
+        name: "",
+        email: "",
+        mobile: "",
+        user_type: userId === "5" ? "" : "1",
+        user_position: userId === "5" ? "" : "Doctor",
+        user_hospital_ids: "",
+        user_device_ids: [],
+      });
+    }
+  }, [open]);
+  
   const handleSubmit = async () => {
     console.log("formdata", formData);
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -185,12 +221,12 @@ const CreateTeam = () => {
         toast.success(response.data.msg);
 
         setFormData({
-          company_id: "",
+          company_id: userId === "5" ? "" : companyID,
           name: "",
           email: "",
           mobile: "",
-          user_type: "",
-          user_position: "",
+          user_type: userId === "5" ? "" : "1",
+          user_position: userId === "5" ? "" : "Doctor",
           user_hospital_ids: "",
           user_device_ids: [],
         });
@@ -284,6 +320,7 @@ const CreateTeam = () => {
               value={formData.name}
               onChange={handleInputChange}
               placeholder="Enter name"
+               maxLength="50"
             />
           </div>
 
@@ -297,6 +334,7 @@ const CreateTeam = () => {
               onChange={handleInputChange}
               placeholder="Enter email"
               pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+                maxLength="100"
               required
             />
           </div>

@@ -73,8 +73,8 @@ const TeamList = () => {
   // Define columns for the table
   const columns = [
     {
-      id: "sl_no",
-      header: "Sl No",
+      id: "S. No.",
+      header: "S. No.",
       cell: ({ row }) => <div>{row.index + 1}</div>,
     },
     // {

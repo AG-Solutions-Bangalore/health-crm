@@ -12,14 +12,20 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import html2pdf from 'html2pdf.js';
+import html2pdf from "html2pdf.js";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ChevronDown, Download, Loader2, Printer, RefreshCw } from "lucide-react";
+import {
+  ChevronDown,
+  Download,
+  Loader2,
+  Printer,
+  RefreshCw,
+} from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 import { Base_Url } from "@/config/BaseUrl";
 import { getNavbarColors } from "@/components/buttonColors/ButtonColors";
@@ -61,11 +67,11 @@ const readingIcons = {
       className="w-16 h-16 print:w-16 print:h-16"
     />
   ),
- ECG: (
-  <span className="text-[4rem] w-16 h-16 print:text-[4rem] print:w-16 print:h-16 flex items-center justify-center">
-    📈
-  </span>
-),
+  ECG: (
+    <span className="text-[4rem] w-16 h-16 print:text-[4rem] print:w-16 print:h-16 flex items-center justify-center">
+      📈
+    </span>
+  ),
 
   Heartrate: (
     <img
@@ -74,8 +80,16 @@ const readingIcons = {
       className="w-16 h-16 print:w-16 print:h-16"
     />
   ),
-  Weight: <span className="text-[4rem] w-16 h-16 print:text-[4rem] print:w-16 print:h-16 flex items-center justify-center">⚖️</span>,
-  Height: <span className="text-[4rem] w-16 h-16 print:text-[4rem] print:w-16 print:h-16 flex items-center justify-center">📏</span>,
+  Weight: (
+    <span className="text-[4rem] w-16 h-16 print:text-[4rem] print:w-16 print:h-16 flex items-center justify-center">
+      ⚖️
+    </span>
+  ),
+  Height: (
+    <span className="text-[4rem] w-16 h-16 print:text-[4rem] print:w-16 print:h-16 flex items-center justify-center">
+      📏
+    </span>
+  ),
 };
 
 const readingTypeMappings = {
@@ -94,15 +108,15 @@ const ReportView = () => {
   const { id } = useParams();
   const location = useLocation();
   const containerRef = useRef();
-const userPosition = localStorage.getItem("user_position");
-  
-      const colors = getNavbarColors(userPosition);
+  const userPosition = localStorage.getItem("user_position");
+  const colors = getNavbarColors(userPosition);
+
   // Date state
   const [selectedDate, setSelectedDate] = useState(null);
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
-  
+
   const {
     data: responseData,
     isLoading,
@@ -124,13 +138,18 @@ const userPosition = localStorage.getItem("user_position");
     enabled: !!id,
   });
 
-
   const patientData = useMemo(() => {
-    if (!responseData || !responseData.patient || responseData.patient.length === 0) {
+    if (
+      !responseData ||
+      !responseData.patient ||
+      responseData.patient.length === 0
+    ) {
       return null;
     }
     return responseData.patient[0];
   }, [responseData]);
+  const { firstName, lastName, sex, city, email, address1, dob, cellNumber } =
+    patientData || {};
 
   const patientReadings = useMemo(() => {
     if (!patientData || !patientData.patient_test) {
@@ -216,149 +235,20 @@ const userPosition = localStorage.getItem("user_position");
 
     return organized;
   }, [patientReadings, selectedDate]);
-  const generatePdf = () => {
-    const element = containerRef.current;
-    
-   
-    const style = document.createElement('style');
-    style.textContent = `
-      @page {
-        size: A4 portrait;
-        margin: 5mm;
-      }
-      body {
-        font-size: 10px !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
-      .print-hide {
-        display: none !important;
-      }
-      .patient-details {
-        padding: 6px !important;
-        margin-bottom: 8px !important;
-      }
-      .vital-card {
-        page-break-inside: avoid;
-        break-inside: avoid;
-        padding: 6px !important;
-        margin-bottom: 6px !important;
-      }
-      h1 {
-        font-size: 16px !important;
-        margin-bottom: 4px !important;
-      }
-      h2, h3 {
-        font-size: 14px !important;
-        margin-bottom: 3px !important;
-      }
-      .text-2xl {
-        font-size: 18px !important;
-      }
-      .text-lg {
-        font-size: 14px !important;
-      }
-      .text-sm {
-        font-size: 12px !important;
-      }
-      .text-xs {
-        font-size: 10px !important;
-      }
-      .grid {
-        display: grid !important;
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        gap: 6px !important;
-      }
-      .gap-4 {
-        gap: 6px !important;
-      }
-      .p-4 {
-        padding: 8px !important;
-      }
-      .border {
-        border-width: 1px !important;
-      }
-      input[type="checkbox"] {
-        -webkit-appearance: checkbox !important;
-        appearance: checkbox !important;
-        width: 12px !important;
-        height: 12px !important;
-      }
-    `;
-    document.head.appendChild(style);
-  
-    const options = {
-      margin: [5, 5, 5, 5],
-      filename: `${firstName || 'Patient'}_${lastName || ''}_Medical_Report.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2,
-        useCORS: true,
-        letterRendering: true,
-        logging: false,
-      },
-      jsPDF: { 
-        unit: 'mm', 
-        format: 'a4', 
-        orientation: 'portrait',
-        compress: true
-      },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    };
-  
-   
-    const printButtons = document.querySelectorAll('.print-hide');
-    printButtons.forEach(btn => {
-      btn.style.display = 'none';
-    });
-  
-    html2pdf()
-      .set(options)
-      .from(element)
-      .toPdf()
-      .get('pdf')
-      .then((pdf) => {
-        const totalPages = pdf.internal.getNumberOfPages();
-        
-        // Add page numbers to each page
-        for (let i = 1; i <= totalPages; i++) {
-          pdf.setPage(i);
-          pdf.setFontSize(10);
-          pdf.setTextColor(150);
-          pdf.text(
-            `Page ${i} of ${totalPages}`,
-            pdf.internal.pageSize.getWidth() - 20,
-            pdf.internal.pageSize.getHeight() - 10
-          );
-        }
-        
-        // Save the PDF
-        pdf.save();
-        
-        // Restore print buttons after PDF generation
-        printButtons.forEach(btn => {
-          btn.style.display = '';
-        });
-        
-        // Clean up the style element
-        document.head.removeChild(style);
-      });
-  };
+
   const handleSendMail = async () => {
-   
     if (!email) {
       toast.error("Email address not available. Please add email first.");
       return;
     }
-  
+
     setIsSendingEmail(true);
     try {
-     
       toast.info("Generating PDF for email...");
-      
+
       const element = containerRef.current;
-        // Add print styles
-      const style = document.createElement('style');
+      // Add print styles
+      const style = document.createElement("style");
       style.textContent = `
         @page {
           size: A4 portrait;
@@ -424,41 +314,40 @@ const userPosition = localStorage.getItem("user_position");
         }
       `;
       document.head.appendChild(style);
-    
+
       const options = {
         margin: [5, 5, 5, 5],
-        filename: `${firstName || 'Patient'}_${lastName || ''}_Medical_Report.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
+        filename: `${firstName || "Patient"}_${
+          lastName || ""
+        }_Medical_Report.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: {
           scale: 2,
           useCORS: true,
           letterRendering: true,
           logging: false,
         },
-        jsPDF: { 
-          unit: 'mm', 
-          format: 'a4', 
-          orientation: 'portrait',
-          compress: true
+        jsPDF: {
+          unit: "mm",
+          format: "a4",
+          orientation: "portrait",
+          compress: true,
         },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        pagebreak: { mode: ["avoid-all", "css", "legacy"] },
       };
-    
-      
-      const printButtons = document.querySelectorAll('.print-hide');
-      printButtons.forEach(btn => {
-        btn.style.display = 'none';
+
+      const printButtons = document.querySelectorAll(".print-hide");
+      printButtons.forEach((btn) => {
+        btn.style.display = "none";
       });
-    
-      
+
       const pdfBlob = await new Promise((resolve) => {
         html2pdf()
           .set(options)
           .from(element)
           .toPdf()
-          .get('pdf')
+          .get("pdf")
           .then((pdf) => {
-           
             const totalPages = pdf.internal.getNumberOfPages();
             for (let i = 1; i <= totalPages; i++) {
               pdf.setPage(i);
@@ -470,45 +359,39 @@ const userPosition = localStorage.getItem("user_position");
                 pdf.internal.pageSize.getHeight() - 10
               );
             }
-            
-           
-            const blob = pdf.output('blob');
-            resolve(blob);
-            
 
-            printButtons.forEach(btn => {
-              btn.style.display = '';
+            const blob = pdf.output("blob");
+            resolve(blob);
+
+            printButtons.forEach((btn) => {
+              btn.style.display = "";
             });
-            
-           
+
             document.head.removeChild(style);
           });
       });
-  
+
       toast.success("PDF generated successfully. ");
       toast.success("Preparing to send email... ");
-  
-     
+
       const formData = new FormData();
-      formData.append('id', id);
-      formData.append('to_name', `${firstName || ''} ${lastName || ''}`);
-      formData.append('to_email', email);
-      formData.append('file_image', pdfBlob);
-  
-     
+      formData.append("id", id);
+      formData.append("to_name", `${firstName || ""} ${lastName || ""}`);
+      formData.append("to_email", email);
+      formData.append("file_image", pdfBlob);
+
       const token = localStorage.getItem("token");
       const response = await axios.post(
         `${Base_Url}/api/panel-send-patient-email`,
         formData,
         {
-          headers: { 
+          headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
+            "Content-Type": "multipart/form-data",
           },
         }
       );
-  
-      
+
       if (response.data.code === 200) {
         toast.success(response.data.msg);
       } else {
@@ -591,7 +474,136 @@ const userPosition = localStorage.getItem("user_position");
       }
     `,
   });
+  const generatePdf = () => {
+    const element = containerRef.current;
 
+    const patientFirstName = firstName || "Patient";
+    const patientLastName = lastName || "";
+    const filename = `${patientFirstName}_${patientLastName}_Test_Report.pdf`;
+
+    const style = document.createElement("style");
+    style.textContent = `
+      @page {
+        size: A4 portrait;
+        margin: 5mm;
+      }
+      body {
+        font-size: 10px !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .print-hide {
+        display: none !important;
+      }
+      // .patient-details {
+      //   padding: 6px !important;
+      //   margin-bottom: 8px !important;
+      // }
+      .vital-card {
+        page-break-inside: avoid;
+        break-inside: avoid;
+        padding: 6px !important;
+        margin-bottom: 6px !important;
+      }
+      h1 {
+        font-size: 16px !important;
+        margin-bottom: 4px !important;
+      }
+      h2, h3 {
+        font-size: 14px !important;
+        margin-bottom: 3px !important;
+      }
+      .text-2xl {
+        font-size: 18px !important;
+      }
+      .text-lg {
+        font-size: 14px !important;
+      }
+      .text-sm {
+        font-size: 12px !important;
+      }
+      .text-xs {
+        font-size: 10px !important;
+      }
+      .grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 6px !important;
+      }
+      .gap-4 {
+        gap: 6px !important;
+      }
+      .p-4 {
+        padding: 8px !important;
+      }
+      .border {
+        border-width: 1px !important;
+      }
+      input[type="checkbox"] {
+        -webkit-appearance: checkbox !important;
+        appearance: checkbox !important;
+        width: 12px !important;
+        height: 12px !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    const options = {
+      margin: [5, 5, 5, 5],
+      filename: filename, // Use the filename variable directly
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true,
+        logging: false,
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait",
+        compress: true,
+      },
+      pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+    };
+
+    const printButtons = document.querySelectorAll(".print-hide");
+    printButtons.forEach((btn) => {
+      btn.style.display = "none";
+    });
+
+    html2pdf()
+      .set(options)
+      .from(element)
+      .toPdf()
+      .get("pdf")
+      .then((pdf) => {
+        const totalPages = pdf.internal.getNumberOfPages();
+
+        // Add page numbers to each page
+        for (let i = 1; i <= totalPages; i++) {
+          pdf.setPage(i);
+          pdf.setFontSize(10);
+          pdf.setTextColor(150);
+          pdf.text(
+            `Page ${i} of ${totalPages}`,
+            pdf.internal.pageSize.getWidth() - 20,
+            pdf.internal.pageSize.getHeight() - 10
+          );
+        }
+
+        // Save the PDF with the filename
+        pdf.save(filename);
+
+        // Restore print buttons after PDF generation
+        printButtons.forEach((btn) => {
+          btn.style.display = "";
+        });
+
+        // Clean up the style element
+        document.head.removeChild(style);
+      });
+  };
   const formatReadingValue = (reading) => {
     if (reading.readingType === "ECG") {
       return (
@@ -630,14 +642,14 @@ const userPosition = localStorage.getItem("user_position");
         </div>
       );
     }
-if (reading.readingType === "T" || reading.readingType === "TC") {
-    const numericValue = parseFloat(reading.readingValue);
-    if (!isNaN(numericValue)) {
-      return Math.round(numericValue * 100) / 100; 
+    if (reading.readingType === "T" || reading.readingType === "TC") {
+      const numericValue = parseFloat(reading.readingValue);
+      if (!isNaN(numericValue)) {
+        return Math.round(numericValue * 100) / 100;
+      }
     }
-  }
 
-  return reading.readingValue;
+    return reading.readingValue;
     // const formattedValue = reading.readingValue;
     // return formattedValue;
   };
@@ -652,7 +664,6 @@ if (reading.readingType === "T" || reading.readingType === "TC") {
   };
 
   // Use patient data from the new API response
-  const { firstName, lastName, sex, city, email, address1, dob, cellNumber } = patientData || {};
 
   return (
     <Layout>
@@ -661,10 +672,10 @@ if (reading.readingType === "T" || reading.readingType === "TC") {
         <div className="flex justify-between items-start mb-6 print:mb-3">
           <div>
             <h1 className="text-2xl font-bold print:text-xl">
-              Patient Medical Report
+              Test Report - {firstName} {lastName}
             </h1>
             <div className="text-sm text-gray-600 print:text-xs">
-              Generated on: {moment().format("MMMM Do YYYY, h:mm:ss a")}
+              Generated on: {moment().format("DD MMM YYYY, h:mm A")}
             </div>
           </div>
           {/* <div className="flex flex-col md:flex-row items-center gap-2">
@@ -679,89 +690,95 @@ if (reading.readingType === "T" || reading.readingType === "TC") {
             </Button>
           </div> */}
           <div className="flex flex-col md:flex-row items-center gap-2">
-  <Button
-    variant="outline"
-    size="sm"
-    className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide`}
-    onClick={handlPrintPdf}
-  >
-    <Printer className="h-4 w-4" /> Report
-  </Button>
-  <Button
-    variant="outline"
-    size="sm"
-    className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide ml-2`}
-    onClick={generatePdf}
-  >
-    <Download className="h-4 w-4" /> PDF
-  </Button>
-  <Button
-    variant="outline"
-    size="sm"
-    className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide `}
-    onClick={handleSendMail}
-    disabled={!email || isSendingEmail}
-  >
-    {isSendingEmail ? (
-      <Loader2 className="h-4 w-4 animate-spin mr-1" />
-       ) : (
-    <>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-4 w-4 "
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-        />
-      </svg>
-      Send Mail
-    </>
-  )}
-</Button>
-</div>
-        </div>
-
-        {/* Patient Details */}
-        <div className="patient-details bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200">
-          <h2 className="text-lg font-semibold mb-3 border-b pb-2">
-            Patient Information
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <strong className="text-gray-700">Name:</strong> {firstName}{" "}
-              {lastName}
-            </div>
-            <div>
-              <strong className="text-gray-700">Sex:</strong> {sex}
-            </div>
-            <div>
-              <strong className="text-gray-700">Date of Birth:</strong>{" "}
-              {dob ? moment(dob).format("MMMM Do YYYY") : "N/A"}
-            </div>
-            <div>
-              <strong className="text-gray-700">Email:</strong> {email || "N/A"}
-            </div>
-            <div>
-              <strong className="text-gray-700">Phone:</strong>{" "}
-              {cellNumber || "N/A"}
-            </div>
-            <div>
-              <strong className="text-gray-700">City:</strong>{" "}
-              {city ? city.charAt(0).toUpperCase() + city.slice(1) : "N/A"}
-            </div>
-            <div className="md:col-span-2 lg:col-span-3">
-              <strong className="text-gray-700">Address:</strong>{" "}
-              {address1 || "N/A"}
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide`}
+              onClick={handlPrintPdf}
+            >
+              <Printer className="h-4 w-4" /> Print
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide ml-2`}
+              onClick={generatePdf}
+            >
+              <Download className="h-4 w-4" /> PDF
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide `}
+              onClick={handleSendMail}
+              disabled={!email || isSendingEmail}
+            >
+              {isSendingEmail ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              ) : (
+                <>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 "
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                  Send Mail
+                </>
+              )}
+            </Button>
           </div>
         </div>
 
+        <div className="patient-details bg-gray-50 p-4 rounded-md mb-4 border border-gray-200">
+          <h2 className="text-md font-medium mb-2 pb-1 border-b border-gray-200 text-gray-800">
+            Patient Information
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-2">
+            <div>
+              <span className="text-gray-500 text-sm">Name:</span>
+              <span className="ml-1 text-gray-800">
+                {firstName} {lastName}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-500 text-sm">Sex:</span>
+              <span className="ml-1 text-gray-800">{sex}</span>
+            </div>
+            <div>
+              <span className="text-gray-500 text-sm">DOB:</span>
+              <span className="ml-1 text-gray-800">
+                {dob ? moment(dob).format("DD MMM, YYYY") : "N/A"}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-500 text-sm">Email:</span>
+              <span className="ml-1 text-gray-800">{email || "N/A"}</span>
+            </div>
+            <div>
+              <span className="text-gray-500 text-sm">Phone:</span>
+              <span className="ml-1 text-gray-800">{cellNumber || "N/A"}</span>
+            </div>
+            <div>
+              <span className="text-gray-500 text-sm">City:</span>
+              <span className="ml-1 text-gray-800">
+                {city ? city.charAt(0).toUpperCase() + city.slice(1) : "N/A"}
+              </span>
+            </div>
+            <div className="md:col-span-2 lg:col-span-3">
+              <span className="text-gray-500 text-sm">Address:</span>
+              <span className="ml-1 text-gray-800">{address1 || "N/A"}</span>
+            </div>
+          </div>
+        </div>
         {/* Date Filter Dropdown */}
         <div className="print-hide mb-6 flex justify-end print:mb-3">
           <DropdownMenu
@@ -841,19 +858,38 @@ if (reading.readingType === "T" || reading.readingType === "TC") {
                       </div>
                       {readings.length > 0 && (
                         <span className="text-sm text-gray-500 mt-3 print:text-sm  print:ml-0 ">
-                          {moment(readings[0].readingTimeUTC).format("D MMM YYYY , h:mm A")}
+                          {moment(readings[0].readingTimeUTC).format(
+                            "D MMM YYYY, h:mm A"
+                          )}
                         </span>
                       )}
                     </div>
-                    
+
                     {readings.length > 0 && (
                       <div className="text-right print:text-left ">
                         <div className="text-2xl font-semibold print:text-2xl">
                           {formatReadingValue(readings[0])}
                         </div>
-                        {readings[0].readingType !== "ECG" && (
+                        {/* {readings[0].readingType !== "ECG" && (
                           <div className="text-sm font-medium text-gray-600 print:text-sm">
                             {readings[0].readingType}
+                          </div>
+                        )} */}
+                        {readings[0].readingType !== "ECG" && (
+                          <div className="text-sm font-medium text-gray-600 print:text-sm">
+                            {readings[0].readingType === "WT"
+                              ? "Lbs"
+                              : readings[0].readingType === "WTKG"
+                              ? "Kg"
+                              : readings[0].readingType === "H"
+                              ? "Inch"
+                              : readings[0].readingType === "HCM"
+                              ? "CM"
+                              : readings[0].readingType === "T"
+                              ? "°F"
+                              : readings[0].readingType === "TC"
+                              ? "°C"
+                              : readings[0].readingType}
                           </div>
                         )}
                       </div>
@@ -862,7 +898,7 @@ if (reading.readingType === "T" || reading.readingType === "TC") {
 
                   {readings.length === 0 && (
                     <div className="text-center py-0 text-gray-400 text-sm print:text-xs">
-                      No {category} readings available
+                       {category} readings not available
                     </div>
                   )}
                 </div>

@@ -51,12 +51,16 @@ import {
 } from "@/components/buttonIndex/ButtonComponents";
 import { toast } from "sonner";
 import moment from "moment";
+import { getNavbarColors } from "@/components/buttonColors/ButtonColors";
 
 const PatientList = () => {
   const { selectedDevice } = useSelector((state) => state.device);
   const deviceId = selectedDevice?.macid;
   const lastSync = selectedDevice?.lastSync;
   const [isRefreshing, setIsRefreshing] = useState(false);
+    const userPosition = localStorage.getItem("user_position");
+    
+      const colors = getNavbarColors(userPosition);
   const [statusUpdateState, setStatusUpdateState] = useState({
     open: false,
     patientId: null,
@@ -142,6 +146,7 @@ const PatientList = () => {
 
     {
       accessorKey: "firstName",
+      id: "Name",
       header: "Name",
       cell: ({ row }) => {
         const firstName = row.original.firstName;
@@ -348,7 +353,7 @@ const PatientList = () => {
                 Last Sync:{" "}
                 {lastSync
                   ? moment(lastSync, "YYYY-MM-DD HH:mm:ss").format(
-                      "DD-MM-YYYY HH:mm:ss"
+                      "DD MMM YYYY, HH:mm A"
                     )
                   : "-"}
               </span>
@@ -401,7 +406,7 @@ const PatientList = () => {
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
                     return (
-                      <TableHead key={header.id} className="">
+                      <TableHead key={header.id}     className={` ${colors.cardHeaderBg}  ${colors.cardHeaderText} `}>
                         {header.isPlaceholder
                           ? null
                           : flexRender(

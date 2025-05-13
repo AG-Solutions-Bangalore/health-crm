@@ -51,6 +51,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Base_Url } from "@/config/BaseUrl";
 import { getNavbarColors } from "@/components/buttonColors/ButtonColors";
+import moment from "moment";
 
 const PatientHistory = () => {
   const { id } = useParams();
@@ -119,27 +120,80 @@ const PatientHistory = () => {
       header: "Source",
       cell: ({ row }) => <div>{row.getValue("source")}</div>,
     },
+    // {
+    //   accessorKey: "readingType",
+    //   header: "Reading Type",
+    //   cell: ({ row }) => <div>{row.getValue("readingType")}</div>,
+    // },
     {
       accessorKey: "readingType",
       header: "Reading Type",
-      cell: ({ row }) => <div>{row.getValue("readingType")}</div>,
+      cell: ({ row }) => {
+        const type = row.getValue("readingType");
+        let displayLabel = type;
+    
+        switch (type) {
+          case "T":
+            displayLabel = "Temp °F";
+            break;
+          case "TC":
+            displayLabel = "Temp °C";
+            break;
+          case "WT":
+            displayLabel = "Weight(lbs)";
+            break;
+          case "WTKG":
+            displayLabel = "Weight(kg)";
+            break;
+          case "H":
+            displayLabel = "Height(Inch)";
+            break;
+          case "HCM":
+            displayLabel = "Height(cm)";
+            break;
+          default:
+            displayLabel = type;
+        }
+    
+        return <div>{displayLabel}</div>;
+      },
     },
+    
+    // {
+    //   accessorKey: "readingValue",
+    //   header: "Reading Value",
+    //   cell: ({ row }) => {
+    //     const value = row.getValue("readingValue");
+    //     const truncatedValue =
+    //       value.length > 30 ? `${value.substring(0, 30)}...` : value;
+    //     return <div className="truncate">{truncatedValue}</div>;
+    //   },
+    // },
     {
       accessorKey: "readingValue",
       header: "Reading Value",
       cell: ({ row }) => {
         const value = row.getValue("readingValue");
+        const readingType = row.getValue("readingType");
+        let displayValue = value;
+        
+        if ((readingType === "T" || readingType === "TC") && !isNaN(parseFloat(value))) {
+          displayValue = parseFloat(value).toFixed(2);
+        }
+    
         const truncatedValue =
-          value.length > 30 ? `${value.substring(0, 30)}...` : value;
+          displayValue.length > 30 ? `${displayValue.substring(0, 30)}...` : displayValue;
+    
         return <div className="truncate">{truncatedValue}</div>;
       },
     },
+    
     {
       accessorKey: "readingTimeUTC",
       header: "Reading Time",
       cell: ({ row }) => {
-        const date = new Date(row.getValue("readingTimeUTC"));
-        return <div>{date.toLocaleString()}</div>;
+        const date = new Date();
+        return <div>{moment(row.getValue("readingTimeUTC")).format("DD MMM YYYY, h:mm A")}</div>;
       },
     },
     {
@@ -180,7 +234,7 @@ const PatientHistory = () => {
       },
     },
   ];
-
+  // 
   // Create the table instance
   const table = useReactTable({
     data: filteredData,
@@ -271,7 +325,7 @@ const PatientHistory = () => {
       <div className="w-full p-4">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl text-gray-800">
-            Patient History of {firstName} {lastName}
+            Patient History - {firstName} {lastName}
           </h1>
           {/* <div className="flex items-center space-x-2">
             <TooltipProvider>

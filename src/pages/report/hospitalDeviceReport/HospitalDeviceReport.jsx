@@ -219,8 +219,8 @@ const HospitalDeviceReport = () => {
     <Layout>
       <div ref={containerRef} className="p-4">
         {/* Header */}
-        <div className="flex justify-between items-center p-2 rounded-lg mb-5 bg-gray-200">
-          <h1 className="text-xl font-bold">Hospital Device Report</h1>
+        <div className={`flex justify-between items-center p-2 rounded-lg mb-5 ${colors.cardHeaderBg}  ${colors.cardHeaderText}`}>
+          <h1 className="text-xl font-bold">Hospitals & Devices Report</h1>
           <div className="print:hidden flex items-center gap-4">
             <div className="flex items-center text-xs text-gray-500 bg-gray-50 rounded-full px-3 py-0.5">
               <span>
@@ -337,7 +337,7 @@ const HospitalDeviceReport = () => {
                         <td className="p-2 border-b font-mono text-xs">{device.deviceMacAddress}</td>
                       )}
                       {visibleColumns.hospitalDeviceCreatedDate && (
-                        <td className="p-2 text-center border-b">{device.hospitalDeviceCreatedDate}</td>
+                        <td className="p-2 text-center border-b">{moment(device.hospitalDeviceCreatedDate).format("DD MMM YYYY")}</td>
                       )}
                       {visibleColumns.hospitalDeviceStatus && (
                         <td className="p-2 text-center border-b">

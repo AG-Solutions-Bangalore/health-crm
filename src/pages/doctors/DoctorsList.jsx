@@ -36,10 +36,13 @@ import TeamStatusToggle from "@/components/statusToggle/TeamStatusToggle";
 import { Base_Url } from "@/config/BaseUrl";
 import EditTeam from "../team/EditTeam";
 import CreateTeam from "../team/CreateTeam";
+import { getNavbarColors } from "@/components/buttonColors/ButtonColors";
 
 
 const DoctorsList = () => {
   const userType = localStorage.getItem("userType")
+  const userPosition = localStorage.getItem("user_position");
+  const colors = getNavbarColors(userPosition);
   const {
     data: doctors,
     isLoading,
@@ -69,8 +72,9 @@ const DoctorsList = () => {
   // Define columns for the table
   const columns = [
     {
-      id: "sl_no",
-      header: "Sl No",
+  
+      id: "S. No.",
+      header: "S. No.",
       cell: ({ row }) => <div>{row.index + 1}</div>,
     },
     // {
@@ -80,6 +84,7 @@ const DoctorsList = () => {
     // },
     {
       accessorKey: "company_name",
+      id:"Company Name",
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -89,13 +94,14 @@ const DoctorsList = () => {
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <div>{row.getValue("company_name")}</div>,
+      cell: ({ row }) => <div>{row.getValue("Company Name")}</div>,
     },
     {
       accessorKey: "hospital_names",
+      id: "Hospital",
       header: "Hospital",
       cell: ({ row }) => {
-        const hospitals = row.getValue("hospital_names")?.split(",") || [];
+        const hospitals = row.getValue("Hospital")?.split(",") || [];
         return (
           <div className="flex flex-wrap gap-1">
           {hospitals.map((name, index) => (
@@ -116,8 +122,9 @@ const DoctorsList = () => {
   
     {
       accessorKey: "name",
+      id: "Name",
       header: "Name",
-      cell: ({ row }) => <div>{row.getValue("name")}</div>,
+      cell: ({ row }) => <div>{row.getValue("Name")}</div>,
     },
     // {
     //   accessorKey: "user_type",
@@ -132,9 +139,10 @@ const DoctorsList = () => {
 
     {
       accessorKey: "status",
+      id: "Status",
       header: "Status",
       cell: ({ row }) => {
-        const status = row.getValue("status");
+        const status = row.getValue("Status");
         const teamId = row.original.id;
 
         if (userType === '1'){
@@ -160,7 +168,7 @@ const DoctorsList = () => {
     ...(userType !== '1'
     ?[
     {
-      id: "actions",
+      id: "Actions",
       header: "Action",
       cell: ({ row }) => {
         const teamId = row.original.id;
@@ -285,14 +293,14 @@ const DoctorsList = () => {
   {/* table  */}
   <div className="rounded-md border">
     <Table>
-      <TableHeader>
+      <TableHeader >
         {table.getHeaderGroups().map((headerGroup) => (
-          <TableRow key={headerGroup.id}>
+          <TableRow key={headerGroup.id} >
             {headerGroup.headers.map((header) => {
               return (
                 <TableHead
                   key={header.id}
-                  className=""
+                  className={` ${colors.cardHeaderBg}  ${colors.cardHeaderText} `}
                 >
                   {header.isPlaceholder
                     ? null

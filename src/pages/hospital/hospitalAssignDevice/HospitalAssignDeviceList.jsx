@@ -48,6 +48,7 @@ import { Base_Url } from "@/config/BaseUrl";
 import { cn } from "@/lib/utils";
 import AssignDeviceToogle from "@/components/statusToggle/AssignDeviceToogle";
 import CreateAssignHospital from "./CreateAssignHospital";
+import moment from "moment";
 
 const HospitalAssignDeviceList = () => {
     const {id} = useParams()
@@ -87,18 +88,21 @@ const HospitalAssignDeviceList = () => {
       // },
       {
         accessorKey: "deviceNameOrId",
+        id: "Device Name",
         header: "Device Name",
-        cell: ({ row }) => <div>{row.getValue("deviceNameOrId")}</div>,
+        cell: ({ row }) => <div>{row.getValue("Device Name")}</div>,
       },
       {
         accessorKey: "deviceMacAddress",
+        id: "Mac Address",
         header: "Mac Address",
-        cell: ({ row }) => <div>{row.getValue("deviceMacAddress")}</div>,
+        cell: ({ row }) => <div>{row.getValue("Mac Address")}</div>,
       },
       {
         accessorKey: "hospitalDeviceCreatedDate",
+        id: "Assign Date",
         header: "Assign Date",
-        cell: ({ row }) => <div>{row.getValue("hospitalDeviceCreatedDate")}</div>,
+        cell: ({ row }) => <div>{ moment(row.getValue("Assign Date")).format("DD MMM YYYY")}</div>,
       },
     //   {
     //     accessorKey: "hospitalDeviceStatus",
@@ -126,9 +130,10 @@ const HospitalAssignDeviceList = () => {
     //   },
       {
             accessorKey: "hospitalDeviceStatus",
+            id: "Status",
             header: "Status",
             cell: ({ row }) => {
-              const status = row.getValue("hospitalDeviceStatus");
+              const status = row.getValue("Status");
               const assignHospitalId = row.original.id;
       
               return (
