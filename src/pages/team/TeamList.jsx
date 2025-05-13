@@ -84,6 +84,7 @@ const TeamList = () => {
     // },
     {
       accessorKey: "company_name",
+      id: "Company Name",
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -93,13 +94,14 @@ const TeamList = () => {
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <div>{row.getValue("company_name")}</div>,
+      cell: ({ row }) => <div>{row.getValue("Company Name")}</div>,
     },
     {
       accessorKey: "hospital_names",
+      id: "Hospital",
       header: "Hospital",
       cell: ({ row }) => {
-        const hospitals = row.getValue("hospital_names")?.split(",") || [];
+        const hospitals = row.getValue("Hospital")?.split(",") || [];
         return (
           <div className="flex flex-wrap gap-1">
           {hospitals.map((name, index) => (
@@ -120,25 +122,29 @@ const TeamList = () => {
   
     {
       accessorKey: "name",
+      id: "Name",
       header: "Name",
-      cell: ({ row }) => <div>{row.getValue("name")}</div>,
+      cell: ({ row }) => <div>{row.getValue("Name")}</div>,
     },
     {
       accessorKey: "user_type",
+      id: "User Type",
       header: "User Type",
-      cell: ({ row }) => <div>{row.getValue("user_type")}</div>,
+      cell: ({ row }) => <div>{row.getValue("User Type")}</div>,
     },
     {
       accessorKey: "user_position",
+      id: "User Position",
       header: "User Position",
-      cell: ({ row }) => <div>{row.getValue("user_position")}</div>,
+      cell: ({ row }) => <div>{row.getValue("User Position")}</div>,
     },
 
     {
       accessorKey: "status",
+      id: "Status",
       header: "Status",
       cell: ({ row }) => {
-        const status = row.getValue("status");
+        const status = row.getValue("Status");
         const teamId = row.original.id;
 
         return (

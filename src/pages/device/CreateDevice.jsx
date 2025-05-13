@@ -117,6 +117,7 @@ const CreateDevice = () => {
               value={formData.deviceNameOrId}
               onChange={handleInputChange}
               placeholder="Enter device name"
+              maxLength="50"
             />
           </div>
           <div className="grid gap-2">
@@ -127,6 +128,7 @@ const CreateDevice = () => {
               value={formData.deviceMacAddress}
               onChange={handleInputChange}
               placeholder="Enter mac address name"
+                maxLength="50"
             />
           </div>
           <div className="grid gap-2">
@@ -137,6 +139,7 @@ const CreateDevice = () => {
               value={formData.deviceRemark}
               onChange={handleInputChange}
               placeholder="Enter remark"
+                maxLength="250"
               
             />
           </div>

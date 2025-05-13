@@ -231,7 +231,7 @@ const userPosition = localStorage.getItem("user_position");
       <div className="w-full p-4 ">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl text-gray-800">Device List</h1>
-          <div className="flex items-center space-x-2">
+          {/* <div className="flex items-center space-x-2">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -260,7 +260,7 @@ const userPosition = localStorage.getItem("user_position");
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </div>
+          </div> */}
         </div>
         {/* searching and column filter  */}
         <div className="flex items-center py-4">

@@ -103,7 +103,14 @@ const HospitalList = () => {
         accessorKey: "hospitalEmail",
         id: "Email",
         header: "Email",
-        cell: ({ row }) => <div>{row.getValue("Email")}</div>,
+        cell: ({ row }) => {
+          const email = row.getValue("Email")
+          return (
+            <span className="block  max-w-[200px] break-words">
+        {email}
+      </span>
+          )
+        },
       },
       {
         accessorKey: "hospitalArea",
@@ -115,7 +122,7 @@ const HospitalList = () => {
         accessorKey: "hospitalCreationDate",
         id: "Creation Date",
         header: "Creation Date",
-        cell: ({ row }) => <div>{moment(row.getValue("Creation Date")).format("DD-MMM-YYYY")}</div>,
+        cell: ({ row }) => <div>{moment(row.getValue("Creation Date")).format("DD MMM YYYY")}</div>,
       },
       // {
       //   accessorKey: "hospitalStatus",
@@ -263,7 +270,7 @@ const HospitalList = () => {
         <div className="w-full p-4 ">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl text-gray-800">Hospital List</h1>
-          <div className="flex items-center space-x-2">
+          {/* <div className="flex items-center space-x-2">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -292,7 +299,7 @@ const HospitalList = () => {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </div>
+          </div> */}
         </div>
         {/* searching and column filter  */}
         <div className="flex items-center py-4">

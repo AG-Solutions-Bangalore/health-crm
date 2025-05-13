@@ -185,6 +185,7 @@ const EditDevice = ({userId}) => {
                     value={formData.deviceRemark}
                     onChange={handleInputChange}
                     placeholder="Enter remark"
+                      maxLength="250"
                     
                   />
                 </div>

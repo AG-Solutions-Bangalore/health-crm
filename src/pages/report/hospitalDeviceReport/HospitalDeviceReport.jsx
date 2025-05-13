@@ -222,7 +222,7 @@ const HospitalDeviceReport = () => {
         <div className={`flex justify-between items-center p-2 rounded-lg mb-5 ${colors.cardHeaderBg}  ${colors.cardHeaderText}`}>
           <h1 className="text-xl font-bold">Hospitals & Devices Report</h1>
           <div className="print:hidden flex items-center gap-4">
-            <div className="flex items-center text-xs text-gray-500 bg-gray-50 rounded-full px-3 py-0.5">
+            {/* <div className="flex items-center text-xs text-gray-500 bg-gray-50 rounded-full px-3 py-0.5">
               <span>
                 Last updated: {new Date(dataUpdatedAt).toLocaleTimeString()}
               </span>
@@ -248,7 +248,7 @@ const HospitalDeviceReport = () => {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            </div>
+            </div> */}
             <div className="flex gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -310,7 +310,7 @@ const HospitalDeviceReport = () => {
             <table className="w-full text-sm">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="p-2 text-center border-b">Sl No</th>
+                  <th className="p-2 text-center border-b">S. No.</th>
                   {visibleColumns.deviceNameOrId && (
                     <th className="p-2 text-left border-b">Device Name/ID</th>
                   )}
