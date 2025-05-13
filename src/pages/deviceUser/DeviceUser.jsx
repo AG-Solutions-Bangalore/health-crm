@@ -51,6 +51,7 @@ import { Base_Url } from "@/config/BaseUrl";
 import { toast } from "sonner";
 import moment from "moment";
 import { getNavbarColors } from "@/components/buttonColors/ButtonColors";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const DeviceUser = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -97,31 +98,34 @@ const userPosition = localStorage.getItem("user_position");
   const columns = [
     {
       accessorKey: "deviceNameOrId",
+      id: "Device Name/ID",
       header: "Device Name/ID",
       cell: ({ row }) => (
         <div className="font-medium text-slate-800 flex items-center">
           <Laptop className="h-3 w-3 mr-2 text-slate-400" />
-          {row.getValue("deviceNameOrId")}
+          {row.getValue("Device Name/ID")}
         </div>
       ),
     },
     {
       accessorKey: "deviceMacAddress",
+      id: "MAC Address",
       header: "MAC Address",
       cell: ({ row }) => (
         <div className="text-slate-600 font-mono text-xs">
-          {row.getValue("deviceMacAddress")}
+          {row.getValue("MAC Address")}
         </div>
       ),
     },
 
     {
       accessorKey: "devicelatestdate",
+      id: "Last Sync",
       header: "Last Sync",
       cell: ({ row }) => {
-        const value = row.getValue("devicelatestdate");
+        const value = row.getValue("Last Sync");
         const formatted = value
-          ? moment(value, "YYYY-MM-DD HH:mm:ss").format("DD-MM-YYYY HH:mm:ss")
+          ? moment(value, "YYYY-MM-DD HH:mm:ss").format("DD MMM YYYY, HH:mm A")
           : "-";
         return (
           <div className="text-slate-600 font-mono text-xs">{formatted}</div>
@@ -131,27 +135,29 @@ const userPosition = localStorage.getItem("user_position");
 
     {
       accessorKey: "patient_count",
+      id: "Patients",
       header: "Patients",
       cell: ({ row }) => (
         <Badge
-          variant={row.getValue("patient_count") > 0 ? "default" : "secondary"}
+          variant={row.getValue("Patients") > 0 ? "default" : "secondary"}
           className="font-normal"
         >
-          {row.getValue("patient_count")}
+          {row.getValue("Patients")}
         </Badge>
       ),
     },
     {
       accessorKey: "patientTest_count",
+      id: "Tests",
       header: "Tests",
       cell: ({ row }) => (
         <Badge
           variant={
-            row.getValue("patientTest_count") > 0 ? "default" : "outline"
+            row.getValue("Tests") > 0 ? "default" : "outline"
           }
           className="font-normal bg-blue-50 text-blue-700 hover:bg-blue-100"
         >
-          {row.getValue("patientTest_count")}
+          {row.getValue("Tests")}
         </Badge>
       ),
     },
@@ -244,44 +250,42 @@ const userPosition = localStorage.getItem("user_position");
           </div>
 
           <div className="flex gap-2 flex-wrap">
-            <Button
-              onClick={handleRefresh}
-              variant="outline"
-              size="sm"
-            className={`h-9 px-3 text-sm ${colors.buttonBg} ${colors.buttonHover} text-white`}
-              disabled={isRefreshing}
-            >
-              {isRefreshing ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                  Refreshing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                  Refresh
-                </>
-              )}
-            </Button>
+              <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    onClick={handleRefresh} 
+                    variant="outline" 
+                    size="sm"
+                    className={`h-9 px-3 text-sm ${colors.buttonBg} ${colors.buttonHover} text-white`}
+                    disabled={isRefreshing}
+                  >
+                    {isRefreshing ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                        Refreshing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                        Refresh
+                      </>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="flex items-center text-xs">
+                    <Clock className="h-3 w-3 mr-1" />
+                    Last updated: {moment(new Date()).format("D MMM YYYY, h:mm A")}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          
           </div>
         </div>
 
-        {/* Last Updated Info */}
-        <div className="flex items-center text-xs text-slate-500">
-          <Clock className="h-3 w-3 mr-1" />
-          Last updated: {new Date().toLocaleString()}
-        </div>
-
-        <Card className="shadow-sm">
-          <CardHeader className="py-3 px-4 border-b bg-slate-50">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-700 flex items-center">
-                <Laptop className="h-4 w-4 mr-2 text-slate-500" />
-                Device Statistics
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-2">
+  
             <div className="flex flex-col md:flex-row items-center justify-between py-1 gap-3">
               <div className="relative w-full md:w-64">
                 <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-slate-400" />
@@ -335,7 +339,7 @@ const userPosition = localStorage.getItem("user_position");
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow
                       key={headerGroup.id}
-                      className="hover:bg-slate-50"
+                      className={` ${colors.cardHeaderBg}  ${colors.cardHeaderText} `}
                     >
                       {headerGroup.headers.map((header) => {
                         return (
@@ -423,11 +427,16 @@ const userPosition = localStorage.getItem("user_position");
             </div>
 
             <div className="flex flex-col md:flex-row items-center justify-between py-3 gap-3">
-              <div className="flex items-center text-xs text-slate-500">
+              {/* <div className="flex items-center text-xs text-slate-500">
                 Showing page {table.getState().pagination.pageIndex + 1} of{" "}
                 {table.getPageCount()} (
                 {dashboardData?.totalDeviceCount?.length || 0} total devices)
-              </div>
+              </div> */}
+              <div className="flex items-center text-xs text-slate-500">
+  Showing page {table.getState().pagination.pageIndex + 1} of{" "}
+  {table.getPageCount()} (
+  {table.getFilteredRowModel().rows.length || 0}  Devices)
+</div>
 
               <div className="flex items-center gap-1">
                 <Button
@@ -514,8 +523,7 @@ const userPosition = localStorage.getItem("user_position");
                 </SelectContent>
               </Select>
             </div>
-          </CardContent>
-        </Card>
+        
       </div>
     </Layout>
   );

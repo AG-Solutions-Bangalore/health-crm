@@ -70,7 +70,7 @@ export default function ForgotPassword() {
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="min-h-[100svh] flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -88,10 +88,10 @@ export default function ForgotPassword() {
               Forgot Password
             </CardTitle>
             <p className="text-sm text-gray-500">
-              Enter your username and email to reset password
+              Enter your email and mobile no. to reset password
             </p>
           </CardHeader>
-          
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -103,35 +103,35 @@ export default function ForgotPassword() {
                   type="email"
                   placeholder="Enter your email"
                   value={email}
+                  maxLength={100}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-10"
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="username" className="text-sm font-medium">
-                Mobile Number
+                  Mobile Number
                 </Label>
                 <Input
-    id="username"
-    type="tel"
-    inputMode="numeric"
-    pattern="\d*"
-    minLength={10}
-    maxLength={10}
-    placeholder="Enter your 10-digit mobile number"
-    value={username}
-    onChange={(e) => {
-      const onlyNumbers = e.target.value.replace(/\D/g, '');
-      setUserName(onlyNumbers);
-    }}
-    className="h-10"
-    required
-  />
-
+                  id="username"
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="\d*"
+                  minLength={10}
+                  maxLength={10}
+                  placeholder="Enter your 10-digit mobile number"
+                  value={username}
+                  onChange={(e) => {
+                    const onlyNumbers = e.target.value.replace(/\D/g, "");
+                    setUserName(onlyNumbers);
+                  }}
+                  className="h-10"
+                  required
+                />
               </div>
-              
+
               <Button
                 type="submit"
                 className="w-full h-10 bg-gray-900 hover:bg-gray-800"
@@ -140,16 +140,30 @@ export default function ForgotPassword() {
                 {isLoading ? (
                   <span className="flex items-center gap-2">
                     <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" className="opacity-25"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                        className="opacity-25"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
                     </svg>
                     {loadingMessage}
                   </span>
-                ) : "Reset Password"}
+                ) : (
+                  "Reset Password"
+                )}
               </Button>
-              
+
               <div className="text-right">
-                <button 
+                <button
                   type="button"
                   onClick={() => navigate("/")}
                   className="text-xs text-gray-500 hover:text-gray-700 hover:underline"

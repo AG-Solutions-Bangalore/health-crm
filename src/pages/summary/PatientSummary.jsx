@@ -54,7 +54,7 @@ const PatientSummary = () => {
   const containerRef = useRef();
   const userPosition = localStorage.getItem("user_position");
   const [isRefreshing, setIsRefreshing] = useState(false);
-    const colors = getNavbarColors(userPosition);
+  const colors = getNavbarColors(userPosition);
   const [visibleColumns, setVisibleColumns] = useState(
     Object.keys(readingTypeMappings).reduce((acc, column) => {
       acc[column] = true;
@@ -104,7 +104,7 @@ const PatientSummary = () => {
             `${Base_Url}/api/panel-fetch-patient-by-id/${patient.patientID}`,
             { headers: { Authorization: `Bearer ${token}` } }
           )
-          .then((res) => ({ 
+          .then((res) => ({
             patientID: patient.patientID,
             readings: res.data.patient[0]?.patient_test || [],
           }))
@@ -120,20 +120,40 @@ const PatientSummary = () => {
   });
 
   const formatReadingValue = (reading) => {
-    if (reading.readingType === "ECG") {
+    const { readingType, readingValue } = reading;
+
+    if (readingType === "ECG") {
       return "ECG Done";
     }
 
-    if (reading.readingType === "T" || reading.readingType === "TC") {
-      return `${Number(reading.readingValue).toFixed(2)} ${
-        readingUnits[reading.readingType] || ""
+    if (readingType === "T" || readingType === "TC") {
+      return `${Number(readingValue).toFixed(2)} ${
+        readingUnits[readingType] || ""
       }`;
     }
 
-    return `${reading.readingValue} ${readingUnits[reading.readingType] || ""}`;
+    const unitMap = {
+      H: "Inch",
+      HCM: "CM",
+      WTKG: "KG",
+      WT: "Lbs",
+      BPM: "BPM",
+    };
+
+    if (unitMap[readingType]) {
+      return (
+        <span>
+          {readingValue}{" "}
+          <span className="font-bold text-[9px] leading-3">
+            {unitMap[readingType]}
+          </span>
+        </span>
+      );
+    }
+
+    return `${readingValue} ${readingUnits[readingType] || ""}`;
   };
 
-  // Get latest readings for each patient and each category
   const patientSummaryData = useMemo(() => {
     if (!patientData || !allReadings) return [];
 
@@ -163,61 +183,79 @@ const PatientSummary = () => {
     });
   }, [patientData, allReadings]);
 
+  console.table("mapping", patientSummaryData);
   const downloadExcel = async () => {
     if (!patientSummaryData || patientSummaryData.length === 0) {
       console.warn("No data available to export");
       return;
     }
-  
+
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Patient Summary");
-  
-    const headers = ["Sl No", "Patient Name", "Pressure", "Glucose", "Heartrate", "Time"];
-  
+
+    const headers = [
+      "Sl No",
+      "Patient Name",
+      "Pressure",
+      "Glucose",
+      "Heartrate",
+      "Time",
+    ];
+
     // Add headers to worksheet
     const headerRow = worksheet.addRow(headers);
     headerRow.eachCell((cell) => {
-      cell.font = { bold: true ,color: { argb: "FFFFFFFF" } };
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
       cell.fill = {
         type: "pattern",
         pattern: "solid",
         fgColor: { argb: "6A9AD0" },
       };
-    
+
       cell.alignment = { horizontal: "center" };
     });
-  
+
     // Add data rows
     patientSummaryData.forEach(({ patient, latestReadings }, index) => {
       const row = worksheet.addRow([
         index + 1,
         `${patient.firstName} ${patient.lastName}`,
-        latestReadings.Pressure ? formatReadingValue(latestReadings.Pressure) : "-",
-        latestReadings.Glucose ? formatReadingValue(latestReadings.Glucose) : "-",
-        latestReadings.Heartrate ? formatReadingValue(latestReadings.Heartrate) : "-",
-        latestReadings.Pressure 
-          ? moment(latestReadings.Pressure.readingTimeUTC).format("h:mm A") 
-          : ""
+        latestReadings.Pressure
+          ? formatReadingValue(latestReadings.Pressure)
+          : "-",
+        latestReadings.Glucose
+          ? formatReadingValue(latestReadings.Glucose)
+          : "-",
+        latestReadings.Heartrate
+          ? formatReadingValue(latestReadings.Heartrate)
+          : "-",
+        latestReadings.Pressure
+          ? moment(latestReadings.Pressure.readingTimeUTC).format("h:mm A")
+          : "",
       ]);
-  
+
       row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-        if (colNumber === 1) { // Sl No
-          cell.alignment = { horizontal: 'center' };
-        } else if (colNumber === 2) { // Patient Name
-          cell.alignment = { horizontal: 'left' };
-        } else if (colNumber >= 3 && colNumber <= 5) { // Pressure, Glucose, Heartrate
-          cell.alignment = { horizontal: 'center' };
-        } else if (colNumber === 6) { // Time
-          cell.alignment = { horizontal: 'right' ,};
+        if (colNumber === 1) {
+          // Sl No
+          cell.alignment = { horizontal: "center" };
+        } else if (colNumber === 2) {
+          // Patient Name
+          cell.alignment = { horizontal: "left" };
+        } else if (colNumber >= 3 && colNumber <= 5) {
+          // Pressure, Glucose, Heartrate
+          cell.alignment = { horizontal: "center" };
+        } else if (colNumber === 6) {
+          // Time
+          cell.alignment = { horizontal: "right" };
           cell.font = { size: 9 };
         }
       });
     });
-  
+
     // Auto-fit columns
-    worksheet.columns.forEach(column => {
+    worksheet.columns.forEach((column) => {
       let maxLength = 0;
-      column.eachCell({ includeEmpty: true }, cell => {
+      column.eachCell({ includeEmpty: true }, (cell) => {
         const columnLength = cell.value ? cell.value.toString().length : 0;
         if (columnLength > maxLength) {
           maxLength = columnLength;
@@ -225,7 +263,7 @@ const PatientSummary = () => {
       });
       column.width = maxLength < 10 ? 10 : maxLength + 2;
     });
-  
+
     // Generate and download Excel file
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], {
@@ -314,19 +352,20 @@ const PatientSummary = () => {
     <Layout>
       <div ref={containerRef} className="p-4">
         {/* Header */}
-        <div className="flex justify-between items-center p-2 rounded-lg mb-5 bg-gray-200">
+        <div
+          className={`flex justify-between items-center p-2 rounded-lg mb-5 ${colors.cardHeaderBg}  ${colors.cardHeaderText}`}
+        >
           <h1 className="text-xl font-bold">Patients Summary</h1>
           <div className="print:hidden flex items-center gap-4">
             <div className=" flex items-center text-xs text-gray-500 bg-gray-50 rounded-full px-3 py-0.5">
-             <span>
-                                   Last Sync:{" "}
-                                   {lastSync
-                                     ? moment(
-                                      lastSync,
-                                         "YYYY-MM-DD HH:mm:ss"
-                                       ).format("DD-MM-YYYY HH:mm:ss")
-                                     : "-"}
-                                 </span>
+              <span>
+                Last Sync:{" "}
+                {lastSync
+                  ? moment(lastSync, "YYYY-MM-DD HH:mm:ss").format(
+                      "DD MMM YYYY, HH:mm A"
+                    )
+                  : "-"}
+              </span>
               {/* <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -370,10 +409,16 @@ const PatientSummary = () => {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide`}  onClick={handlPrintPdf}>
+              <Button
+                className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide`}
+                onClick={handlPrintPdf}
+              >
                 <Printer className="h-4 w-4" /> Print
               </Button>
-              <Button    className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide`} onClick={downloadExcel}>
+              <Button
+                className={`${colors.buttonBg} ${colors.buttonHover} text-white print-hide`}
+                onClick={downloadExcel}
+              >
                 <RiFileExcel2Line className="h-3 w-3 mr-1" /> Excel
               </Button>
             </div>
@@ -414,7 +459,7 @@ const PatientSummary = () => {
                               <div className="font-medium">
                                 {formatReadingValue(latestReadings[category])}
                               </div>
-                              <div className="text-xs text-gray-500">
+                              <div className="text-[10px] leading-3 text-gray-500">
                                 {moment(
                                   latestReadings[category].readingTimeUTC
                                 ).format("h:mm A")}

@@ -29,7 +29,7 @@ import { Edit, Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ButtonConfig } from "@/config/ButtonConfig";
 import { toast } from "sonner";
-import ReactSelect from 'react-select';
+import ReactSelect from "react-select";
 import { Base_Url } from "@/config/BaseUrl";
 import { useLocation } from "react-router-dom";
 
@@ -39,16 +39,16 @@ const EditTeam = ({ teamId }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [deviceOptions, setDeviceOptions] = useState([]);
-  const {pathname}= useLocation()
- 
+  const { pathname } = useLocation();
+
   const queryClient = useQueryClient();
-  
+
   const [formData, setFormData] = useState({
     mobile: "",
     email: "",
     name: "",
     status: "Active",
-    user_device_ids: []
+    user_device_ids: [],
   });
 
   const fetchTeamData = async () => {
@@ -63,23 +63,25 @@ const EditTeam = ({ teamId }) => {
       );
       const teamData = response.data.team;
       const devices = response.data.device || [];
-      
+
       // Prepare device options
-      const options = devices.map(device => ({
+      const options = devices.map((device) => ({
         value: device.id.toString(),
-        label: `${device.deviceNameOrId} (${device.deviceMacAddress})`
+        label: `${device.deviceNameOrId} (${device.deviceMacAddress})`,
       }));
       setDeviceOptions(options);
-      
+
       // Convert comma-separated device IDs to array
-      const deviceIds = teamData.user_device_ids ? teamData.user_device_ids.split(',') : [];
-      
+      const deviceIds = teamData.user_device_ids
+        ? teamData.user_device_ids.split(",")
+        : [];
+
       setFormData({
         mobile: teamData.mobile,
         email: teamData.email,
         status: teamData.status,
         name: teamData.name,
-        user_device_ids: deviceIds
+        user_device_ids: deviceIds,
       });
     } catch (error) {
       toast.error("Failed to fetch team data");
@@ -94,11 +96,29 @@ const EditTeam = ({ teamId }) => {
     }
   }, [open]);
 
+  // const handleInputChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     [name]: value,
+  //   }));
+  // };
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
+
+    let formattedValue = value;
+
+    if (type === "tel") {
+      formattedValue = value.replace(/\D/g, "");
+    }
+
+    if (type === "email") {
+      formattedValue = value.toLowerCase().trim();
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: formattedValue,
     }));
   };
 
@@ -110,10 +130,10 @@ const EditTeam = ({ teamId }) => {
   };
 
   const handleDeviceChange = (selectedOptions) => {
-    const deviceIds = selectedOptions.map(option => option.value);
-    setFormData(prev => ({
+    const deviceIds = selectedOptions.map((option) => option.value);
+    setFormData((prev) => ({
       ...prev,
-      user_device_ids: deviceIds
+      user_device_ids: deviceIds,
     }));
   };
 
@@ -128,9 +148,9 @@ const EditTeam = ({ teamId }) => {
       const token = localStorage.getItem("token");
       const payload = {
         ...formData,
-        user_device_ids: formData.user_device_ids.join(',') // Convert array to comma-separated string
+        user_device_ids: formData.user_device_ids.join(","), // Convert array to comma-separated string
       };
-      
+
       const response = await axios.put(
         `${Base_Url}/api/panel-update-team/${teamId}`,
         payload,
@@ -156,12 +176,14 @@ const EditTeam = ({ teamId }) => {
 
   // Get currently selected devices for the select component
   const selectedDevices = formData.user_device_ids
-    .map(id => {
-      const device = deviceOptions.find(d => d.value === id);
-      return device ? { 
-        value: device.value, 
-        label: device.label.split(' (')[0] // Remove the MAC address part
-      } : null;
+    .map((id) => {
+      const device = deviceOptions.find((d) => d.value === id);
+      return device
+        ? {
+            value: device.value,
+            label: device.label.split(" (")[0], // Remove the MAC address part
+          }
+        : null;
     })
     .filter(Boolean);
 
@@ -189,14 +211,17 @@ const EditTeam = ({ teamId }) => {
             </DialogTrigger>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Edit {`${pathname === "/doctors" ? "Doctor":"Team"}`}</p>
+            <p>Edit {`${pathname === "/doctors" ? "Doctor" : "Team"}`}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit {`${pathname === "/doctors" ? "Doctor":"Team"}`} - <span className="text-2xl">{formData.name}</span></DialogTitle>
+          <DialogTitle>
+            Edit {`${pathname === "/doctors" ? "Doctor" : "Team"}`} -{" "}
+            <span className="text-2xl">{formData.name}</span>
+          </DialogTitle>
         </DialogHeader>
 
         {isFetching ? (
@@ -210,9 +235,12 @@ const EditTeam = ({ teamId }) => {
               <Input
                 id="mobile"
                 name="mobile"
+                type="tel"
                 value={formData.mobile}
                 onChange={handleInputChange}
                 placeholder="Enter mobile"
+                pattern="^\d{10}$"
+                maxLength="10"
               />
             </div>
 
@@ -224,6 +252,8 @@ const EditTeam = ({ teamId }) => {
                 value={formData.email}
                 onChange={handleInputChange}
                 placeholder="Enter email "
+                  pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+                    maxLength="100"
               />
             </div>
             <div className="grid gap-2">
@@ -254,8 +284,6 @@ const EditTeam = ({ teamId }) => {
                 </SelectContent>
               </Select>
             </div>
-
-            
           </div>
         )}
 
@@ -271,7 +299,7 @@ const EditTeam = ({ teamId }) => {
                 Updating...
               </>
             ) : (
-                `Update ${pathname === "/doctors" ? "Doctor":"Team"}`
+              `Update ${pathname === "/doctors" ? "Doctor" : "Team"}`
             )}
           </Button>
         </DialogFooter>

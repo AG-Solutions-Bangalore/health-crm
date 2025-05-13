@@ -50,10 +50,12 @@ import CreateDevice from "./CreateDevice";
 import { cn } from "@/lib/utils";
 import EditDevice from "./EditDevice";
 import moment from "moment";
+import { getNavbarColors } from "@/components/buttonColors/ButtonColors";
 
 const DeviceList = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
-
+const userPosition = localStorage.getItem("user_position");
+  const colors = getNavbarColors(userPosition);
   const {
     data: device,
     isLoading,
@@ -84,26 +86,30 @@ const DeviceList = () => {
   const columns = [
     {
       accessorKey: "deviceNameOrId",
+      id: "Device Name",
       header: "Device Name",
-      cell: ({ row }) => <div>{row.getValue("deviceNameOrId")}</div>,
+      cell: ({ row }) => <div>{row.getValue("Device Name")}</div>,
     },
     {
       accessorKey: "deviceMacAddress",
+      id: "Mac Address",
       header: "Mac Address",
-      cell: ({ row }) => <div>{row.getValue("deviceMacAddress")}</div>,
+      cell: ({ row }) => <div>{row.getValue("Mac Address")}</div>,
     },
     {
       accessorKey: "deviceRemark",
+      id: "Remarks",
       header: "Remarks",
-      cell: ({ row }) => <div>{row.getValue("deviceRemark")}</div>,
+      cell: ({ row }) => <div>{row.getValue("Remarks")}</div>,
     },
     {
       accessorKey: "devicelatestdate",
+      id: "Last Sync",
       header: "Last Sync",
        cell: ({ row }) => {
-              const value = row.getValue("devicelatestdate");
+              const value = row.getValue("Last Sync");
               const formatted = value
-                ? moment(value, "YYYY-MM-DD HH:mm:ss").format("DD-MM-YYYY HH:mm:ss")
+                ? moment(value, "YYYY-MM-DD HH:mm:ss").format("DD MMM YYYY, HH:mm A")
                 : "-";
               return (
                 <div className="text-slate-600 font-mono text-sm">{formatted}</div>
@@ -111,10 +117,12 @@ const DeviceList = () => {
             },
     },
     {
+     
       accessorKey: "device_status",
+      id: "Status",
       header: "Status",
       cell: ({ row }) => {
-        const status = row.getValue("device_status");
+        const status = row.getValue("Status");
 
         return (
           <div className="flex items-center gap-2">
@@ -136,6 +144,7 @@ const DeviceList = () => {
     },
     {
       accessorKey: "id",
+      id: "Action",
       header: "Action",
       cell: ({ row }) => {
         
@@ -300,7 +309,7 @@ const DeviceList = () => {
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
                     return (
-                      <TableHead key={header.id} className="">
+                      <TableHead key={header.id}     className={` ${colors.cardHeaderBg}  ${colors.cardHeaderText} `}>
                         {header.isPlaceholder
                           ? null
                           : flexRender(
