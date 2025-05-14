@@ -99,11 +99,24 @@ const EditHospital = ({ userId }) => {
 
     // Validate mobile number
     if (name === "hospitalMobile") {
-      if (value && !validateMobile(value)) {
-        setErrors(prev => ({...prev, hospitalMobile: "Mobile number must be 10 digits"}));
+      const digitsOnly = value.replace(/\D/g, ""); 
+      setFormData((prev) => ({
+        ...prev,
+        [name]: digitsOnly,
+      }));
+    
+      if (digitsOnly && digitsOnly.length !== 10) {
+        setErrors((prev) => ({
+          ...prev,
+          hospitalMobile: "Mobile number must be 10 digits",
+        }));
       } else {
-        setErrors(prev => ({...prev, hospitalMobile: ""}));
+        setErrors((prev) => ({
+          ...prev,
+          hospitalMobile: "",
+        }));
       }
+      return;
     }
 
     // Validate email
@@ -221,6 +234,7 @@ const EditHospital = ({ userId }) => {
               value={formData.hospitalName}
               onChange={handleInputChange}
               placeholder="Enter hospital name"
+                maxLength="50"
             />
           </div>
           
@@ -233,6 +247,7 @@ const EditHospital = ({ userId }) => {
                 value={formData.hospitalArea}
                 onChange={handleInputChange}
                 placeholder="Enter hospital area"
+                  maxLength="50"
               />
             </div>
             <div className="grid gap-2">
@@ -262,7 +277,10 @@ const EditHospital = ({ userId }) => {
                 value={formData.hospitalMobile}
                 onChange={handleInputChange}
                 placeholder="Enter 10-digit mobile number"
+             
                 maxLength={10}
+               inputMode="numeric"
+              pattern="\d*"
               />
               {errors.hospitalMobile && (
                 <p className="text-sm text-red-500">{errors.hospitalMobile}</p>
@@ -277,6 +295,7 @@ const EditHospital = ({ userId }) => {
                 value={formData.hospitalEmail}
                 onChange={handleInputChange}
                 placeholder="Enter hospital email"
+                maxLength="100"
               />
               {errors.hospitalEmail && (
                 <p className="text-sm text-red-500">{errors.hospitalEmail}</p>
@@ -292,6 +311,7 @@ const EditHospital = ({ userId }) => {
               value={formData.hospitalAdd}
               onChange={handleInputChange}
               placeholder="Enter hospital address"
+              maxLength="250"
             />
           </div>
         </div>
