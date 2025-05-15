@@ -46,6 +46,7 @@ const CreatePage = () => {
         { name: "Doctors", url: "/doctors" },
         { name: "Patient", url: "/patient" },
         { name: "Summary", url: "/summary" },
+        { name: "Enquiry", url: "/enquiry" },
         { name: "Hospital Report", url: "/hospital-report" },
         { name: "User Management", url: "/userManagement" },
         { name: "UserType", url: "/user-type" },

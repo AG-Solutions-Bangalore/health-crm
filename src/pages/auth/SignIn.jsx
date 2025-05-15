@@ -67,6 +67,7 @@ export default function LoginAuth() {
       localStorage.setItem("allUsers", JSON.stringify(userN));
       localStorage.setItem("id", UserInfo.user.id);
       localStorage.setItem("name", UserInfo.user.name);
+      localStorage.setItem("mobile", UserInfo.user.mobile);
       localStorage.setItem("userType", UserInfo.user.user_type);
       localStorage.setItem("email", UserInfo.user.email);
       localStorage.setItem("user_position", UserInfo.user.user_position);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   BookmarkCheck,
   Building2,
@@ -15,6 +15,7 @@ import {
   UserCog,
   UserCheck, 
   Building,
+  MessageCircle,
 } from "lucide-react";
 
 import { Upgrade } from "./upgrade/Upgrade";
@@ -107,7 +108,7 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
   const pageControl = JSON.parse(localStorage.getItem("pageControl")) || [];
   const userName = localStorage.getItem("name");
   const userEmail = localStorage.getItem("email");
-
+const navigate= useNavigate()
   const colors = getSidebarColors(userPosition);
 
   const allMenuItems = [
@@ -150,6 +151,11 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
       name: "Hospital Report",
       path: "/hospital-report",
       icon: Building2,
+    },
+    {
+      name: "Enquiry",
+      path: "/enquiry",
+      icon: MessageCircle,
     },
     {
       name: "User Management",
@@ -271,8 +277,18 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
         <div className={`p-3 border-t ${colors.border}`}>
           {!isCollapsed && (
             <div className="mb-1">
-              <div className="flex items-center gap-3 p-2">
-                <div className={`flex items-center justify-center h-8 w-8 rounded-full ${colors.userBg} ${colors.userText} font-medium`}>
+              <div className="flex items-center gap-3 p-2 cursor-pointer"
+              onClick={() => navigate('/profile')}
+              title="Profile"
+              >
+                <div className={`flex items-center justify-center h-8 w-8 rounded-full ${colors.userBg} ${colors.userText} font-medium
+                
+                ${
+    location.pathname === '/profile' 
+      ? "border border-black" 
+      : ""
+  }
+                `}>
                   {userName?.charAt(0).toUpperCase()}
                 </div>
                 <div className="overflow-hidden">
@@ -282,6 +298,7 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
               </div>
             </div>
           )}
+      
           <Upgrade isCollapsed={isCollapsed} />
         </div>
       </div>
