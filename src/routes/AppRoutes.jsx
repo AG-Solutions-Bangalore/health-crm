@@ -24,6 +24,8 @@ import HospitalAssignDeviceList from "@/pages/hospital/hospitalAssignDevice/Hosp
 import HospitalDeviceReport from "@/pages/report/hospitalDeviceReport/HospitalDeviceReport";
 import DeviceUser from "@/pages/deviceUser/DeviceUser";
 import DoctorsList from "@/pages/doctors/DoctorsList";
+import Profile from "@/pages/profile/Profile";
+import Enquiry from "@/pages/enquiry/Enquiry";
 
 function AppRoutes() {
   return (
@@ -65,7 +67,14 @@ function AppRoutes() {
 
         {/* usertype */}
         <Route path="/user-type" element={<UserTypeList />} />
+       
+
         <Route path="/edit-user-type/:id" element={<EditUserType />} />
+        {/* profile & change password  */}
+         <Route path="/profile" element={<Profile />} />
+         {/* enquiry  */}
+         <Route path="/enquiry" element={<Enquiry />} />
+
       </Route>
 
 
