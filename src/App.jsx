@@ -8,6 +8,7 @@ import SessionTimeoutTracker from "./components/sessionTimeout/SessionTimeoutTra
 import axios from "axios";
 import ValidationWrapper from "./lib/encyrption/ValidationWrapper";
 import DisableInspect from "./components/disableInspect/DisableInspect";
+import AutoLogout from "./components/autoLogout/AutoLogout";
 
 
 
@@ -37,8 +38,9 @@ function App() {
     <>
        <Toaster richColors position="top-right" />
          <SessionTimeoutTracker expiryTime={time} onLogout={handleLogout} />
-         <DisableInspect/>
+         {/* <DisableInspect/> */}
          <ValidationWrapper>
+         <AutoLogout />
        <AppRoutes />
        </ValidationWrapper>
     </>

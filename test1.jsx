@@ -1,318 +1,306 @@
-import Layout from "@/components/Layout";
-import React, { useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Printer, RefreshCw, Loader2 } from "lucide-react";
-import moment from "moment";
-import { useReactToPrint } from "react-to-print";
-import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
-import { useSelector } from "react-redux";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import ExcelJS from "exceljs";
-import { RiFileExcel2Line } from "react-icons/ri";
-import { Base_Url } from "@/config/BaseUrl";
+import React, { useState, useEffect, useRef } from "react";
+import { AlertTriangle } from "lucide-react";
+import { useMousePosition } from "@/hooks/useMousePosition";
 
-const HospitalDeviceReport = () => {
-  const containerRef = useRef();
-  const [isRefreshing, setIsRefreshing] = useState(false);
+const SessionTimeoutTracker = ({ expiryTime, onLogout }) => {
+  const [showBanner, setShowBanner] = useState(false);
+  const [countdown, setCountdown] = useState(300);
+  const [isExpiring, setIsExpiring] = useState(false);
+  const hasLoggedOut = useRef(false);
 
-  // Query to get hospital and device data
-  const {
-    data: hospitalData,
-    isLoading,
-    isError,
-    refetch,
-    dataUpdatedAt,
-  } = useQuery({
-    queryKey: ["hospitalDeviceReport"],
-    queryFn: async () => {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `${Base_Url}/api/panel-fetch-report-of-all-hospital-with-device`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      return response.data.hospital;
-    },
-  });
+  // mousePosition hook
+  const mousePosition = useMousePosition();
+  const lastMousePosition = useRef({ x: 0, y: 0 });
+  
+  const lastActivityTime = useRef(Date.now());
+  const isTabActive = useRef(true);
+  const inactivityTimer = useRef(null);
+  const isInitialized = useRef(false);
 
-  const downloadExcel = async () => {
-    if (!hospitalData || hospitalData.length === 0) {
-      console.warn("No data available to export");
+  const isTokenPresent = () => {
+    return !!localStorage.getItem("token");
+  };
+
+  const resetInactivityTimer = (isFromTabChange = false) => {
+    console.log("Activity detected, resetting inactivity timer");
+    lastActivityTime.current = Date.now();
+    if (inactivityTimer.current) {
+      clearTimeout(inactivityTimer.current);
+    }
+    
+   
+    const timeoutDuration = isFromTabChange ? 70 * 1000 : 7 * 1000;
+    inactivityTimer.current = setTimeout(checkInactivity, timeoutDuration);
+  };
+
+  const checkInactivity = () => {
+    console.log("Checking inactivity status");
+    if (!hasLoggedOut.current && isTokenPresent()) {
+      const now = Date.now();
+      const timeElapsed = now - lastActivityTime.current;
+      console.log(`Time since last activity: ${timeElapsed / 1000} seconds`);
+      
+      if (timeElapsed >= 7 * 1000) {
+        console.log("Inactive for too long, logging out");
+        performLogout();
+      } else {
+        resetInactivityTimer();
+      }
+    }
+  };
+
+  // mouse position handling from the hooks -- only when tab is active
+  useEffect(() => {
+    if (!isInitialized.current || !isTokenPresent() || !isTabActive.current) return;
+    
+    const hasMoved = (
+      lastMousePosition.current.x !== mousePosition.x ||
+      lastMousePosition.current.y !== mousePosition.y
+    );
+    
+    if (hasMoved) {
+      console.log("Mouse moved:", { 
+        previous: lastMousePosition.current, 
+        current: mousePosition 
+      });
+      lastMousePosition.current = { x: mousePosition.x, y: mousePosition.y };
+      resetInactivityTimer(false); 
+    }
+  }, [mousePosition.x, mousePosition.y]);
+
+ 
+  const handleVisibilityChange = () => {
+    const isNowActive = !document.hidden;
+    console.log("Tab visibility changed:", { isNowActive });
+    
+    if (isNowActive) {
+     
+      const timeSinceLastActivity = Date.now() - lastActivityTime.current;
+      console.log("Time since last activity (ms):", timeSinceLastActivity);
+      
+      if (timeSinceLastActivity >= 70 * 1000) { 
+        console.log("Inactive while tab was hidden, logging out");
+        performLogout();
+      } else {
+        console.log("Tab became active, resetting timer with longer duration");
+        resetInactivityTimer(true);
+      }
+    } else {
+      
+      console.log("Tab became inactive, pausing mouse tracking");
+    }
+    
+    isTabActive.current = isNowActive;
+  };
+
+  const checkExpiry = () => {
+    if (hasLoggedOut.current || !isTokenPresent()) {
+      setShowBanner(false);
       return;
     }
-  
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Hospital Device Report");
-  
-    const headers = [
-      "Sl No", 
-      "Hospital Name", 
-      "Hospital Area", 
-      "Hospital Address",
-      "Status",
-      "Device Name/ID",
-      "MAC Address",
-      "Device Status",
-      "Created Date"
-    ];
-  
-    // Add headers to worksheet
-    const headerRow = worksheet.addRow(headers);
-    headerRow.eachCell((cell) => {
-      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
-      cell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "6A9AD0" },
-      };
-      cell.alignment = { horizontal: "center" };
-    });
-  
-    // Add data rows
-    let rowIndex = 1;
-    hospitalData.forEach((hospital) => {
-      if (hospital.hospital_device && hospital.hospital_device.length > 0) {
-        hospital.hospital_device.forEach((device) => {
-          const row = worksheet.addRow([
-            rowIndex++,
-            hospital.hospitalName,
-            hospital.hospitalArea,
-            hospital.hospitalAdd,
-            hospital.hospitalStatus,
-            device.deviceNameOrId,
-            device.deviceMacAddress,
-            device.hospitalDeviceStatus,
-            moment(device.hospitalDeviceCreatedDate).format("DD-MMM-YYYY")
-          ]);
-  
-          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-            cell.alignment = { horizontal: 'center' };
-            if (colNumber === 2 || colNumber === 3 || colNumber === 4) { // Hospital info columns
-              cell.alignment = { horizontal: 'left' };
-            }
-          });
-        });
-      } else {
-        // Add row for hospital even if it has no devices
-        const row = worksheet.addRow([
-          rowIndex++,
-          hospital.hospitalName,
-          hospital.hospitalArea,
-          hospital.hospitalAdd,
-          hospital.hospitalStatus,
-          "-",
-          "-",
-          "-",
-          "-"
-        ]);
-  
-        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          cell.alignment = { horizontal: 'center' };
-          if (colNumber === 2 || colNumber === 3 || colNumber === 4) {
-            cell.alignment = { horizontal: 'left' };
-          }
-        });
-      }
-    });
-  
-    // Auto-fit columns
-    worksheet.columns.forEach(column => {
-      let maxLength = 0;
-      column.eachCell({ includeEmpty: true }, cell => {
-        const columnLength = cell.value ? cell.value.toString().length : 0;
-        if (columnLength > maxLength) {
-          maxLength = columnLength;
-        }
-      });
-      column.width = maxLength < 10 ? 10 : maxLength + 2;
-    });
-  
-    // Generate and download Excel file
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `hospital_device_report_${moment().format("DD-MMM-YYYY")}.xlsx`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
 
-  const handlPrintPdf = useReactToPrint({
-    content: () => containerRef.current,
-    documentTitle: "hospital-device-report",
-    pageStyle: `
-      @page {
-        size: A4 landscape;
-        margin: 5mm;
-      }
-      @media print {
-        body {
-          border: 0px solid #000;
-          font-size: 10px; 
-          margin: 0mm;
-          padding: 0mm;
-          min-height: 100vh;
-        }
-        table {
-          font-size: 11px;
-        }
-        .print-hide {
-          display: none;
-        }
-      }
-    `,
-  });
+    const now = new Date();
+    const expiry = new Date(expiryTime);
+    const timeUntilExpiry = expiry - now;
+    const fiveMinutes = 5 * 60 * 1000;
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await refetch();
-    } finally {
-      setIsRefreshing(false);
+    if (timeUntilExpiry <= fiveMinutes && timeUntilExpiry > 0) {
+      if (!isExpiring) {
+        console.log("Session expiring soon, showing banner");
+        setIsExpiring(true);
+        setShowBanner(true);
+        setCountdown(Math.floor(timeUntilExpiry / 1000));
+      }
+    } else if (timeUntilExpiry <= 0) {
+      console.log("Session expired, logging out");
+      performLogout();
     }
   };
 
-  if (isLoading) {
-    return (
-      <Layout>
-        <div className="flex justify-center items-center h-full">
-          <Button disabled>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Loading Hospital Device Report
-          </Button>
-        </div>
-      </Layout>
-    );
-  }
+  const performLogout = () => {
+    if (!hasLoggedOut.current && isTokenPresent()) {
+      console.log("Performing logout");
+      hasLoggedOut.current = true;
+    
+      clearTimeout(inactivityTimer.current);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      onLogout();
+      console.log("Logout completed");
+    }
+  };
 
-  if (isError) {
-    return (
-      <Layout>
-        <div className="text-center py-8 text-red-500">
-          Error loading hospital device report
-          <Button className="mt-4" onClick={handleRefresh}>
-            Retry
-          </Button>
-        </div>
-      </Layout>
-    );
-  }
+  useEffect(() => {
+    const initializeSessionTracking = () => {
+      if (!isTokenPresent()) {
+        console.log("No token present, not initializing session tracking");
+        return false;
+      }
+
+      console.log("Initializing session timeout tracker");
+      console.log("Session expiry time:", new Date(expiryTime).toLocaleString());
+      
+      hasLoggedOut.current = false;
+      
+      lastActivityTime.current = Date.now();
+      resetInactivityTimer(false);
+      
+      return true;
+    };
+
+    isInitialized.current = initializeSessionTracking();
+    
+    if (!isInitialized.current) {
+      const checkForToken = setInterval(() => {
+        if (isTokenPresent() && !isInitialized.current) {
+          console.log("Token detected after initialization, reinitializing tracker");
+          isInitialized.current = initializeSessionTracking();
+          clearInterval(checkForToken);
+        }
+      }, 1000);
+      
+      return () => clearInterval(checkForToken);
+    }
+    
+    if (isInitialized.current) {
+      window.addEventListener("keydown", () => {
+        if (isTabActive.current) {
+          resetInactivityTimer(false);
+        }
+      });
+      window.addEventListener("scroll", () => {
+        if (isTabActive.current) {
+          resetInactivityTimer(false);
+        }
+      });
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+
+      checkExpiry();
+
+      let intervalIds = [];
+      const countdownTimer = () => {
+        if (isExpiring && !hasLoggedOut.current && isTokenPresent()) {
+          setCountdown((prev) => {
+            if (prev <= 1) {
+              console.log("Countdown reached zero, logging out");
+              performLogout();
+              return 0;
+            }
+            return prev - 1;
+          });
+        }
+      };
+
+      const checkInterval = setInterval(checkExpiry, 1000);
+      const countdownInterval = setInterval(countdownTimer, 1000);
+      intervalIds.push(checkInterval, countdownInterval);
+
+      const handleStorageChange = (e) => {
+        if (e.key === "token") {
+          if (!e.newValue) {
+            console.log("Token removed from storage, cleaning up");
+            setShowBanner(false);
+            hasLoggedOut.current = true;
+            isInitialized.current = false;
+            intervalIds.forEach((id) => clearInterval(id));
+
+            clearTimeout(inactivityTimer.current);
+            window.removeEventListener("keydown", resetInactivityTimer);
+            window.removeEventListener("scroll", resetInactivityTimer);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+          } else {
+            if (!isInitialized.current) {
+              console.log("Token added to storage, initializing tracking");
+              isInitialized.current = initializeSessionTracking();
+            }
+          }
+        }
+      };
+
+      window.addEventListener("storage", handleStorageChange);
+
+      console.log("Session timeout tracker initialized");
+
+      return () => {
+        console.log("Cleaning up session timeout tracker");
+        intervalIds.forEach((id) => clearInterval(id));
+        clearTimeout(inactivityTimer.current);
+        window.removeEventListener("keydown", resetInactivityTimer);
+        window.removeEventListener("scroll", resetInactivityTimer);
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+        window.removeEventListener("storage", handleStorageChange);
+        isInitialized.current = false;
+      };
+    }
+  }, [expiryTime, onLogout]);
+
+  useEffect(() => {
+    if (isInitialized.current && expiryTime) {
+      checkExpiry();
+    }
+  }, [expiryTime]);
+
+  useEffect(() => {
+    const tokenObserver = setInterval(() => {
+      const hasToken = isTokenPresent();
+      
+      if (!hasToken && isInitialized.current) {
+        console.log("Token removed, deactivating session tracker");
+        isInitialized.current = false;
+        setShowBanner(false);
+      }
+      
+      if (hasToken && !isInitialized.current && !hasLoggedOut.current) {
+        console.log("Token added, activating session tracker");
+        hasLoggedOut.current = false;
+      }
+    }, 1000);
+    
+    return () => clearInterval(tokenObserver);
+  }, []);
+
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
+
+  if (!showBanner || hasLoggedOut.current || !isTokenPresent() || !isInitialized.current) return null;
 
   return (
-    <Layout>
-      <div ref={containerRef} className="p-4">
-        {/* Header */}
-        <div className="flex justify-between items-center p-2 rounded-lg mb-5 bg-gray-200">
-          <h1 className="text-xl font-bold">Hospital Device Report</h1>
-          <div className="print:hidden flex items-center gap-4">
-            <div className="flex items-center text-xs text-gray-500 bg-gray-50 rounded-full px-3 py-0.5">
-              <span>
-                Last updated: {new Date(dataUpdatedAt).toLocaleTimeString()}
-              </span>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleRefresh}
-                      className="ml-2 p-1 hover:bg-gray-100 rounded-full"
-                      disabled={isRefreshing}
-                    >
-                      {isRefreshing ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-3 w-3" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Refresh data</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <div className="flex gap-2">
-              <Button className="print-hide" onClick={handlPrintPdf}>
-                <Printer className="h-4 w-4" /> Print
-              </Button>
-              <Button className="print-hide" onClick={downloadExcel}>
-                <RiFileExcel2Line className="h-3 w-3 mr-1" /> Excel
-              </Button>
+    <div className="space-y-20">
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-md animate-slide-down">
+        <div className="mx-4">
+          <div className="bg-white rounded-lg shadow-xl border border-gray-300">
+            <div
+              className="h-1 bg-blue-500 rounded-tl-lg"
+              style={{
+                width: `${(countdown / 300) * 100}%`,
+                transition: "width 1s linear",
+              }}
+            />
+            <div className="p-2">
+              <div className="flex items-center gap-4">
+                <div className="bg-blue-100 rounded-full p-2">
+                  <AlertTriangle className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <div className="text-gray-800 text-sm">
+                    Session timeout in{" "}
+                    <span className="text-blue-600 font-bold font-mono">
+                      {formatTime(countdown)}
+                    </span>
+                  </div>
+                  <div className="text-gray-600 text-xs mt-1">
+                    Save your work to prevent data loss
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Report Content */}
-        {hospitalData?.map((hospital) => (
-          <div key={hospital.id} className="mb-8">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="text-lg font-semibold">{hospital.hospitalName}</h2>
-              <div className="text-sm text-gray-500">
-                <span className="mr-4">Area: {hospital.hospitalArea}</span>
-                <span>Status: {hospital.hospitalStatus}</span>
-              </div>
-            </div>
-            
-            <div className="border rounded-lg overflow-hidden mb-6">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="p-2 text-center border-b">Sl No</th>
-                    <th className="p-2 text-left border-b">Device Name/ID</th>
-                    <th className="p-2 text-left border-b">MAC Address</th>
-                    <th className="p-2 text-center border-b">Status</th>
-                    <th className="p-2 text-center border-b">Created Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {hospital.hospital_device && hospital.hospital_device.length > 0 ? (
-                    hospital.hospital_device.map((device, index) => (
-                      <tr key={device.id} className="hover:bg-gray-50">
-                        <td className="p-2 text-center border-b">{index + 1}</td>
-                        <td className="p-2 border-b">{device.deviceNameOrId}</td>
-                        <td className="p-2 border-b">{device.deviceMacAddress}</td>
-                        <td className="p-2 text-center border-b">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            device.hospitalDeviceStatus === "Active" 
-                              ? "bg-green-100 text-green-800" 
-                              : "bg-red-100 text-red-800"
-                          }`}>
-                            {device.hospitalDeviceStatus}
-                          </span>
-                        </td>
-                        <td className="p-2 text-center border-b">
-                          {moment(device.hospitalDeviceCreatedDate).format("DD-MMM-YYYY")}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="5" className="p-4 text-center text-gray-500">
-                        No devices assigned to this hospital
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ))}
       </div>
-    </Layout>
+    </div>
   );
 };
 
-export default HospitalDeviceReport;
-
-//sajid 
+export default SessionTimeoutTracker;
