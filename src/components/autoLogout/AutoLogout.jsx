@@ -1,265 +1,204 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
-import { Base_Url } from "@/config/BaseUrl";
 
-const AUTO_LOGOUT_TIME = 2 * 60 * 60 * 1000; 
+const AUTO_LOGOUT_TIME = 10 * 1000; // 2 hours
 
-const AutoLogout = () => {
-  const navigate = useNavigate();
+const AutoLogout = ({ expiryTime, onLogout }) => {
   const [lastActivity, setLastActivity] = useState(Date.now());
-  const [tabActive, setTabActive] = useState(true);
-  const [tabInactiveTime, setTabInactiveTime] = useState(null);
+  const isTabActive = useRef(true);
+  const inactivityTimer = useRef(null);
+  const hasLoggedOut = useRef(false);
+  const tokenCheckInterval = useRef(null);
 
-  console.log("AutoLogout component initialized");
+  console.log(
+    "🔄 AutoLogout component mounted",
+    expiryTime ? "with expiryTime" : "without expiryTime"
+  );
 
-  const handleLogout = async () => {
-    console.log("Logout process initiated");
-    const token = localStorage.getItem("token");
-    
-    try {
-      console.log("Making logout API request");
-      const res = await axios.post(
-        `${Base_Url}/api/panel-logout`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      
-      console.log("Logout API response:", res.data);
-      
-      if (res.data.code === 200) {
-        toast.success(res.data.msg);
-        localStorage.clear();
-        console.log("Logout successful, redirecting to home");
-        navigate("/");
-      } else {
-        toast.error(res.data.msg);
-        console.log("Logout failed with error message:", res.data.msg);
-      }
-    } catch (error) {
-      console.error("Logout API call failed:", error);
-     
-      localStorage.clear();
-      navigate("/");
+  const handleLogout = () => {
+    if (hasLoggedOut.current) {
+      console.log("⚠️ Logout already triggered, skipping...");
+      return;
+    }
+
+    console.log("🔒 Triggering logout due to inactivity or token expiry");
+
+    hasLoggedOut.current = true;
+    clearTimeout(inactivityTimer.current);
+    clearInterval(tokenCheckInterval.current);
+
+    toast.info("You have been logged out due to inactivity");
+
+    if (onLogout) {
+      console.log("✅ Calling onLogout callback");
+      onLogout();
     }
   };
 
-  
-  useEffect(() => {
-    const tokenExpireTime = localStorage.getItem("token-expire-time");
-    
-    console.log("Token expiration checker initialized");
-    console.log("Current token-expire-time:", tokenExpireTime);
-    
-    if (!tokenExpireTime) {
-      console.log("No token expiration time found");
+  const resetTimers = () => {
+    // Only reset timers if we have an expiryTime
+    if (!expiryTime) {
+      console.log("⏭️ Not resetting timers: expiryTime not available");
       return;
     }
-    
+
+    console.log("🔁 Resetting inactivity timer");
+    setLastActivity(Date.now());
+    clearTimeout(inactivityTimer.current);
+    inactivityTimer.current = setTimeout(() => {
+      console.log("🕒 Inactivity timeout reached");
+      handleLogout();
+    }, AUTO_LOGOUT_TIME);
+  };
+
+  // User activity listener
+  useEffect(() => {
+    // Only set up activity tracking if we have an expiryTime
+    if (!expiryTime) {
+      console.log(
+        "⏭️ Not setting up activity tracking: expiryTime not available"
+      );
+      return;
+    }
+
+    const handleActivity = () => {
+      if (!isTabActive.current) {
+        console.log("🛑 Activity ignored because tab is inactive");
+        return;
+      }
+      console.log("📌 User activity detected, resetting timer");
+      resetTimers();
+    };
+
+    const events = ["keypress", "scroll", "touchstart", "click", "keydown",];
+
+    events.forEach((event) => {
+      window.addEventListener(event, handleActivity);
+    });
+
+    console.log("✅ User activity listeners registered");
+    resetTimers();
+
+    return () => {
+      events.forEach((event) => {
+        window.removeEventListener(event, handleActivity);
+      });
+      clearTimeout(inactivityTimer.current);
+      console.log("🧹 Cleaned up activity listeners and timers");
+    };
+  }, [expiryTime]);
+
+  // Tab visibility change
+  useEffect(() => {
+    // Only set up visibility tracking if we have an expiryTime
+    if (!expiryTime) {
+      console.log(
+        "⏭️ Not setting up visibility tracking: expiryTime not available"
+      );
+      return;
+    }
+
+    const handleVisibilityChange = () => {
+      const isNowActive = !document.hidden;
+      isTabActive.current = isNowActive;
+
+      console.log(
+        `🪟 Tab visibility changed: ${isNowActive ? "active" : "inactive"}`
+      );
+
+      if (isNowActive) {
+        const inactiveDuration = Date.now() - lastActivity;
+        console.log(`⏱️ Inactive for ${inactiveDuration / 1000} seconds`);
+
+        if (inactiveDuration >= AUTO_LOGOUT_TIME) {
+          console.log(
+            "🚨 Logged out due to being inactive while tab was hidden"
+          );
+          handleLogout();
+        } else {
+          resetTimers();
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    console.log("👁️ Tab visibility listener added");
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      console.log("🧹 Tab visibility listener removed");
+    };
+  }, [expiryTime, lastActivity]);
+
+  // Token expiry check
+  useEffect(() => {
+    if (!expiryTime) {
+      console.log(
+        "⏭️ Not setting up token expiry check: expiryTime not available"
+      );
+      return;
+    }
+
+    console.log(
+      "🧾 Token expiration monitor initialized with expiry:",
+      expiryTime
+    );
+
     const checkTokenExpiration = () => {
       const currentTime = Date.now();
-      const expirationTime = parseInt(tokenExpireTime, 10);
-      
-      console.log("Checking token expiration:", {
-        currentTime,
-        expirationTime,
-        timeLeft: (expirationTime - currentTime) / 1000 / 60, 
-      });
-      
-   
-      if (currentTime >= expirationTime) {
-        console.log("Token expired, logging out");
-        handleLogout();
-      }
-    };
-    
-  
-    checkTokenExpiration();
-    
-   
-    const tokenExpirationInterval = setInterval(checkTokenExpiration, 60000); 
-    console.log("Token expiration check interval set up");
-    
-    return () => {
-      console.log("Cleaning up token expiration checker");
-      clearInterval(tokenExpirationInterval);
-    };
-  }, []);
 
-
-  useEffect(() => {
-    console.log("Tab visibility tracker initialized");
-    
-    const handleVisibilityChange = () => {
-      const isHidden = document.hidden;
-      const currentTime = Date.now();
-      
-      console.log("Tab visibility changed:", { 
-        isHidden, 
-        currentTime: new Date(currentTime).toLocaleTimeString() 
-      });
-      
-      if (isHidden) {
-      
-        setTabActive(false);
-        setTabInactiveTime(currentTime);
-        console.log("Tab became inactive at:", new Date(currentTime).toLocaleTimeString());
+      // Handle the date string format "2025-05-20 18:39:45"
+      let expiryTimestamp;
+      if (typeof expiryTime === "string") {
+        // Check if it's in the format "YYYY-MM-DD HH:MM:SS"
+        if (expiryTime.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+          expiryTimestamp = new Date(expiryTime.replace(" ", "T")).getTime();
+          console.log(
+            `🕒 Parsed date string "${expiryTime}" to timestamp ${expiryTimestamp}`
+          );
+        } else {
+          // Try to parse as a numeric string
+          expiryTimestamp = parseInt(expiryTime, 10);
+        }
       } else {
-       
-        setTabActive(true);
-        
-        if (tabInactiveTime) {
-          const inactiveTime = currentTime - tabInactiveTime;
-          console.log("Tab became active again. Inactive for:", inactiveTime / 1000, "seconds");
-          
-          
-          if (inactiveTime >= AUTO_LOGOUT_TIME) {
-            console.log("Tab inactive threshold reached, logging out");
-            toast.info("You have been logged out due to inactivity");
-            handleLogout();
-            return;
-          }
-          
-          
-          setLastActivity(currentTime);
-        }
-        
-        setTabInactiveTime(null);
+        expiryTimestamp = expiryTime;
       }
-    };
-    
-   
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    
-   
-    if (document.hidden) {
-      setTabActive(false);
-      setTabInactiveTime(Date.now());
-      console.log("Tab is already inactive on component mount");
-    }
-    
-    return () => {
-      console.log("Cleaning up visibility change tracker");
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [tabInactiveTime]);
 
- 
-  useEffect(() => {
-    console.log("Activity tracker initialized");
-    
-    const updateActivity = () => {
-      if (!tabActive) return; 
-      
-      const newActivityTime = Date.now();
-      console.log("User activity detected, updating timestamp", {
-        previousActivity: new Date(lastActivity).toLocaleTimeString(),
-        newActivity: new Date(newActivityTime).toLocaleTimeString(),
-        idleTime: (newActivityTime - lastActivity) / 1000, // seconds
-      });
-      setLastActivity(newActivityTime);
-    };
+      if (isNaN(expiryTimestamp)) {
+        console.error("⚠️ Invalid expiryTime format:", expiryTime);
+        return;
+      }
 
+      const minutesLeft = (expiryTimestamp - currentTime) / 1000 / 60;
+      console.log(`⏳ Token check: ${minutesLeft.toFixed(2)} minutes left`);
 
-    const events = [
-     
-      "keypress",
-      "scroll",
-      "touchstart",
-      "click",
-      "keydown"
-    ];
-
-   
-    events.forEach(event => {
-      window.addEventListener(event, updateActivity);
-    });
-    console.log("Activity event listeners attached");
-
-   
-    const inactivityCheckInterval = setInterval(() => {
-      if (!tabActive) return; 
-      
-      const currentTime = Date.now();
-      const inactiveTime = currentTime - lastActivity;
-      
-      console.log("Checking inactivity status:", {
-        lastActivity: new Date(lastActivity).toLocaleTimeString(),
-        currentTime: new Date(currentTime).toLocaleTimeString(),
-        inactiveTimeMinutes: inactiveTime / 1000 / 60, 
-        logoutThresholdMinutes: AUTO_LOGOUT_TIME / 1000 / 60, 
-      });
-      
-      if (inactiveTime >= AUTO_LOGOUT_TIME) {
-        console.log("Inactivity threshold reached, logging out");
-        toast.info("You have been logged out due to inactivity");
+      if (currentTime >= expiryTimestamp) {
+        console.log("🚫 Token expired, triggering logout");
         handleLogout();
       }
-    }, 60000);
+    };
 
+    checkTokenExpiration(); // Initial check on mount
+    tokenCheckInterval.current = setInterval(checkTokenExpiration, 60000);
 
     return () => {
-      console.log("Cleaning up activity tracker");
-      events.forEach(event => {
-        window.removeEventListener(event, updateActivity);
-      });
-      clearInterval(inactivityCheckInterval);
+      clearInterval(tokenCheckInterval.current);
+      console.log("🧹 Cleared token expiration interval");
     };
-  }, [lastActivity, tabActive]);
+  }, [expiryTime]);
 
- 
+  // Clean up everything when component unmounts or expiryTime changes
   useEffect(() => {
-    console.log("Tab switching tracker initialized");
-    
+    // Reset logout state when expiryTime changes
+    hasLoggedOut.current = false;
 
-    const tabSwitchCheckInterval = setInterval(() => {
-      const storedTabSwitchTime = localStorage.getItem('tab-switch-time');
-      
-      if (storedTabSwitchTime) {
-        const switchTime = parseInt(storedTabSwitchTime, 10);
-        const currentTime = Date.now();
-        const timeSinceSwitch = currentTime - switchTime;
-        
-        console.log("Checking tab switch time:", {
-          switchTime: new Date(switchTime).toLocaleTimeString(),
-          currentTime: new Date(currentTime).toLocaleTimeString(),
-          minutesSinceSwitch: timeSinceSwitch / 1000 / 60,
-        });
-        
-   
-        if (timeSinceSwitch >= AUTO_LOGOUT_TIME) {
-          console.log("Tab switch timeout reached, logging out");
-          toast.info("You have been logged out due to extended time on another tab");
-          handleLogout();
-        }
-      }
-    }, 60000); 
-    
- 
-    const updateTabSwitchTime = () => {
-      if (document.hidden) {
-
-        localStorage.setItem('tab-switch-time', Date.now().toString());
-        console.log("Updated tab-switch-time in localStorage:", new Date().toLocaleTimeString());
-      }
-    };
-    
-   
-    document.addEventListener("visibilitychange", updateTabSwitchTime);
-    
     return () => {
-      console.log("Cleaning up tab switch tracker");
-      clearInterval(tabSwitchCheckInterval);
-      document.removeEventListener("visibilitychange", updateTabSwitchTime);
+      clearTimeout(inactivityTimer.current);
+      clearInterval(tokenCheckInterval.current);
+      console.log("🧹 Component unmounting, cleaned up all resources");
     };
-  }, []);
+  }, [expiryTime]);
 
- 
   return null;
 };
 
